@@ -1,0 +1,28 @@
+.remy-dialog.camera-dialog{width:620px;max-width:calc(100vw - 32px)}
+.camera-view{display:flex;flex-direction:column;gap:12px;min-width:0}
+.camera-view__stage{position:relative;isolation:isolate;overflow:hidden;height:clamp(230px,40dvh,390px);border:2px solid #5a6c42;border-radius:16px;background-color:#c3d099;background-image:radial-gradient(#596b3430 1px,transparent 1px);background-size:5px 5px;box-shadow:inset 0 3px 7px #455b3138}
+.camera-view__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;background:#263528}
+.camera-view__badge{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:6px;border-radius:6px;background:#f8f7e4ef;padding:5px 8px;color:#34442a;font:11px var(--mono);letter-spacing:.6px}
+.camera-view__invitation{position:absolute;top:56px;left:16px;right:16px;text-align:center;color:#3f522d;font:13px var(--mono);line-height:1.5}
+.camera-view__pet,.camera-view .camera-view__pet:active{position:absolute;z-index:2;transform:translate(-50%,-50%);padding:0;border:0;background:transparent;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;transition:none}
+.camera-view .camera-view__pet:active{cursor:grabbing}
+.camera-view__pet:focus-visible{outline:3px solid #fffef4;outline-offset:2px;border-radius:14px;box-shadow:0 0 0 5px #3e5030}
+.camera-view__pet img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 7px 2px #24382645);pointer-events:none}
+.camera-view__pet--laughing img{animation:camera-giggle .18s steps(2,end) 6}
+.camera-view__giggle{position:absolute;top:-12px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#f9f9d8;color:#354726;border:2px solid #50633c;box-shadow:3px 3px 0 #50633c;border-radius:4px;padding:4px 7px;font:bold 12px var(--mono);pointer-events:none}
+.camera-view__ground{position:absolute;left:16px;right:16px;bottom:27px;border-top:1px dashed #596b3460;z-index:-1}
+.camera-view__stage--live .camera-view__ground{display:none}
+.camera-view__hint{display:flex;justify-content:center;align-items:center;gap:7px;font-size:13px;color:#59664f}
+.camera-view__adjustments{display:flex;align-items:center;gap:14px}
+.camera-view__adjustments label{display:flex;align-items:center;gap:12px;flex:1;font-size:13px;font-weight:600;white-space:nowrap}
+.camera-view__adjustments input{width:100%;min-width:60px;min-height:44px;accent-color:#47633d;cursor:pointer}
+.camera-view__adjustments button{display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;border:1px solid #c5cebb;border-radius:8px;background:#f0f2e6;padding:9px;color:#34442a;font-size:13px}
+.camera-view__actions .primary-button,.camera-view__actions .secondary-button{display:flex;justify-content:center;align-items:center;gap:9px;width:100%;min-height:48px;margin:0}
+.camera-view__notice{min-height:0;font-size:13px;line-height:1.45;color:#465a36}
+.camera-view__notice:empty{display:none}
+.camera-view__privacy{font-size:11px;line-height:1.6;color:#6b7662}
+.camera-view__resume{position:absolute;z-index:3;top:53px;left:50%;transform:translateX(-50%);min-height:44px;max-width:90%;padding:9px 14px;background:#f8f7e4;border:1px solid #6c8153;border-radius:8px;font-size:13px;color:#34442a;white-space:nowrap}
+.camera-view .camera-view__resume:active{transform:translateX(-50%)}
+@keyframes camera-giggle{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(7deg) translateY(-7px)}}
+@media(max-width:440px){.camera-view__adjustments{gap:8px}.camera-view__adjustments label{gap:7px;font-size:12px}.camera-view__adjustments button span{display:none}.camera-view__hint{font-size:12px}.camera-view__stage{height:clamp(230px,36dvh,330px)}}
+@media(prefers-reduced-motion:reduce){.camera-view__pet--laughing img{animation:none}}

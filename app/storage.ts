@@ -38,6 +38,7 @@ const petSchema = z.object({
   }).strict()),
   food:z.object({level:z.number().int().min(0).max(3), decayAt:timestamp}).strict(),
   pettedDate:calendarDate.nullable(), fedDates:z.array(calendarDate),
+  playCount:z.number().int().nonnegative().safe().optional(), lastPlayedAt:timestamp.optional(),
   revealedStage:stage, highestStage:stage,
   cocoon:z.object({startedAt:timestamp, endsAt:timestamp, targetStage:stage, trait:kind}).strict().nullable().optional(),
   restUntil:timestamp.nullable().optional(), restedAt:timestamp.optional(),

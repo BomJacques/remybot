@@ -1,0 +1,24 @@
+.creature-tickle {
+  position: absolute; z-index: 3; width: clamp(140px, 24vh, 214px); height: 90%;
+  max-height: 224px; border: 0; padding: 0; border-radius: 28px; background: transparent;
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.creature-tickle:focus-visible {outline: 2px dashed #354c27; outline-offset: 3px;}
+.creature-tickle:disabled {cursor: default;}
+.laughing .creature-stage > .sprite {animation: tickle-laugh .28s steps(2,end) 6;}
+.laugh-pixel {position: absolute; right: 5%; top: 8%; font: bold 13px var(--mono); transform: rotate(8deg); pointer-events: none; animation: laugh-pop 1.8s ease-out both;}
+.companion-extra {display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; max-width: 500px; margin: 20px auto 0; color: #65745d; font-size: 12px;}
+.companion-extra > span {max-width: 260px;}
+.camera-button {display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; min-height: 44px; padding: 9px 14px; border: 1px solid #c7cbbd; border-radius: 12px; color: #3d503b; background: #edeedf; font-size: 13px; cursor: pointer; touch-action: manipulation;}
+.camera-button:hover {background: #e2e6d1;}
+.playtime-card {margin: 22px 0 10px; padding: 16px; border: 1px solid #d5dbc6; border-radius: 16px; background: #edf0df;}
+.playtime-card > div {display: flex; align-items: center; gap: 12px; color: #3d503b;}
+.playtime-card strong,.playtime-card small {display: block;}
+.playtime-card strong {font-size: 15px; font-weight: 500;}
+.playtime-card small {margin-top: 4px; font-size: 12px; color: #6b775e;}
+.playtime-card .secondary-button {width: 100%; margin-top: 14px; min-height: 44px;}
+@keyframes tickle-laugh {0%,100% {transform: rotate(-7deg) scale(1.04,.96);} 50% {transform: translateY(-9px) rotate(7deg) scale(.96,1.04);}}
+@keyframes laugh-pop {0% {opacity: 0; transform: translateY(12px) rotate(8deg);} 15%,80% {opacity: 1;} 100% {opacity: 0; transform: translateY(-8px) rotate(-6deg);}}
+@media(max-width:660px) {.companion-extra {max-width: 86vw; gap: 10px; margin-top: 14px; font-size: 11px;}.camera-button {padding: 8px 11px;}.laugh-pixel {font-size: 11px;}}
+@media(max-height:700px) and (min-width:661px) {.companion-extra {margin-top: 10px; max-width: 360px;}.creature-tickle {height: 125px;}}
+@media(prefers-reduced-motion:reduce) {.laughing .creature-stage > .sprite,.laugh-pixel {animation: none;}.laugh-pixel {opacity: 1;}}
