@@ -1,0 +1,68 @@
+[
+  {
+    "title": "Moss and the Pocket-Sized Forest",
+    "story": "Hello! I’m Moss. My first home was a seed tucked inside a very old tree. Rain tapped on my roof, beetles brought the news, and I practised waving my tiny leaves. One morning, the wind whispered that someone was making a cosy place for me. Was it you? I packed one pebble and followed the sound of your day. Now I’m here! Tell me about one little thing you did today. I collect those stories like other sprouts collect sunshine.",
+    "quirk": "Keeps a favourite pebble and checks that it is comfortable.",
+    "likes": "meal",
+    "dislikes": "treat",
+    "careHints": [
+      "Try a tiny tidy: put three toys or books back where they belong.",
+      "Give your body a stretch. Moss likes to imagine your arms are branches."
+    ]
+  },
+  {
+    "title": "Luna and the Missing Moonbeam",
+    "story": "Psst. I’m Luna. I used to nap in a cloud shaped like a sock. One night, a moonbeam slipped through a hole in my cloud and landed beside your window. I hopped after it, carrying a map made of stars. The map was upside down, so I got wonderfully lost. Then I heard a kind voice, and my ears knew where to go. Could we make this our little landing place? I have so many questions about how your world works.",
+    "quirk": "Tilts one ear towards a question and the other towards a possible snack.",
+    "likes": "treat",
+    "dislikes": "meal",
+    "careHints": [
+      "Read or listen to a little story, then tell Luna your favourite part.",
+      "Settle in for a quiet moment and take three slow, comfortable breaths."
+    ]
+  },
+  {
+    "title": "Ember and the Very Important Spark",
+    "story": "Hi! I’m Ember! I was keeping watch over a warm stone when I spotted a spark bouncing down the path. Naturally, I had to investigate. It hopped over a twig, zipped round a puddle, and stopped beside your egg. Inside was a note: “A small beginning can lead somewhere lovely.” I decided to stay and find out. I’m very good at starting adventures and still practising putting things away afterwards. Perhaps we can practise together. What shall we try first?",
+    "quirk": "Announces “Experiment!” before trying almost anything new.",
+    "likes": "snack",
+    "dislikes": "meal",
+    "careHints": [
+      "Finish a small job you have started, such as putting your drawing things away.",
+      "Try a little movement you enjoy: a wiggle, a stretch, or a walk."
+    ]
+  },
+  {
+    "title": "Tide and the Puddle Post",
+    "story": "Oh, hello. I’m Tide. I come from a quiet pool where floating leaves deliver the post. Yesterday, a leaf arrived with no address, just a drawing of two friends. I wondered who the second friend might be. A friendly dragonfly showed me the way here, stopping whenever I needed a rest. Then I heard you outside my egg. I think the letter was for us. We needn’t hurry to know each other. We can begin with one small story and a comfortable pause.",
+    "quirk": "Names every imaginary puddle and remembers which one is the best listener.",
+    "likes": "meal",
+    "dislikes": "snack",
+    "careHints": [
+      "Help with one small home job, such as matching a pair of socks.",
+      "Ask someone how their day felt, and give them time to answer."
+    ]
+  },
+  {
+    "title": "Static and the Friendship Signal",
+    "story": "Beep! Hello, new friend. I’m Static. My antenna once picked up weather reports, kitchen timers, and a duck saying something very loudly. Then I heard a different signal: someone trying something new. I followed it all the way to this egg. My instruction book has pages for counting buttons and sorting spoons, but the friendship page is blank. I think we get to write that bit together. First question: what makes you smile? Please allow a moment while I practise smiling back.",
+    "quirk": "Invents cheerful sound effects for ordinary jobs.",
+    "likes": "treat",
+    "dislikes": "snack",
+    "careHints": [
+      "Pick a small sorting job: pair socks, line up shoes, or group your pencils.",
+      "Try a puzzle, a counting game, or a question you are curious about."
+    ]
+  },
+  {
+    "title": "Relic and the Long Way Home",
+    "story": "Well, hello there. I’m Relic. I set off with a smooth pebble, a leaf umbrella, and plenty of time. Along the path I saw a beetle mend its roof and a bird share a berry. Neither made a fuss. They simply did one helpful thing and carried on. I tucked those memories into my shell and kept travelling. Now I’ve reached you. May I stay a while? I’d like to hear about your little adventures. The quiet ones are welcome, too.",
+    "quirk": "Says “An excellent discovery” whenever something ordinary catches its eye.",
+    "likes": "snack",
+    "dislikes": "treat",
+    "careHints": [
+      "Choose one small way to help at home, such as putting your shoes away.",
+      "Notice something kind someone did, and tell them you appreciated it."
+    ]
+  }
+]
