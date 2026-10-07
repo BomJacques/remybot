@@ -5,4 +5,6 @@ export const eggs = [
   {id:'tide',name:'Tide',tag:'THE CURIOUS DRIFTER',color:'#cbdfe0',story:'Washed ashore in a teacup after a storm. Hold it close and you can hear a sea that does not appear on any map.',hint:'It has travelled a long way to find you.'},
   {id:'static',name:'Static',tag:'THE HAPPY ACCIDENT',color:'#e7dfb6',story:'Appeared inside a radio that had not worked for years. For one whole minute, every station played the same cheerful tune.',hint:'It gives off a very friendly frequency.'},
   {id:'relic',name:'Relic',tag:'THE OLD SOUL',color:'#ddd1c4',story:'Unearthed beside a door with no building around it. The markings on its shell change a little when nobody is looking.',hint:'Some mysteries are better raised than solved.'},
+  {id:'nimbus',name:'Nimbus',tag:'THE ROOFTOP FIND',color:'#d7e1e7',story:'Found inside a folded kite after a windy afternoon. The shell feels cool. A faint whistle comes from inside whenever a breeze passes.',hint:'It rocks from side to side when the wind changes.'},
+  {id:'pebble',name:'Pebble',tag:'THE RIVERBED DISCOVERY',color:'#d6d2c6',story:'Found among the stones of a dry stream. It is heavier than it looks. Three tiny taps answer whenever someone knocks on the shell.',hint:'A quick rinse reveals a pattern nobody noticed before.'},
 ] as const;

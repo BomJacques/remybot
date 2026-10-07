@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {defaults,hatchSeconds,cocoonSeconds,growth} from '../app/engine.ts';
+import {defaults,hatchSeconds,cocoonSeconds,growth,petSpriteStage,petStageName} from '../app/engine.ts';
 import {SAVE_KEY,SaveError,readSavedPet,applySavedAction,resetSavedPet} from '../app/storage.ts';
 
 const start=new Date('2026-10-04T02:00:00Z');
@@ -311,6 +311,85 @@ test('malformed care, bedtime and ancestral snapshots are rejected without chang
     p=>{p.lineage.ancestors[0].pet.forms=[];},p=>{p.lineage.ancestors[0].generation=9;},
     p=>{p.lineage.ancestors[0].pet.lineage={generation:1,variant:0,ancestors:[]};},
     p=>{p.lineage.ancestors[0].archivedAt=start.toISOString();},
+  ]) {
+    const value=JSON.parse(good.getItem(SAVE_KEY));mutate(value.pet);
+    const original=JSON.stringify(value),storage=memory(original);
+    assert.throws(()=>readSavedPet(storage),error=>error instanceof SaveError&&error.code==='invalid');
+    assert.equal(storage.getItem(SAVE_KEY),original);
+  }
+});
+
+test('both new families and all five pinned appearances survive reload and family archiving',()=>{
+  for(const egg of [6,7]) {
+    const storage=memory();applySavedAction(storage,{...adopt,egg},start);
+    for(let day=1;day<=4;day++) {
+      applySavedAction(storage,{type:'evolve'},nextDay(day));
+      applySavedAction(storage,{type:'emerge'},new Date(+nextDay(day)+60000));
+      assert.equal(petSpriteStage(readSavedPet(storage).pet),day+1);
+    }
+    const parent=readSavedPet(storage).pet;
+    assert.deepEqual(parent.forms.map(form=>form.visualForm),[1,2,3,4,5]);
+    assert.equal(petStageName(parent),'Ancient');
+    applySavedAction(storage,{type:'lineage',name:'New family egg',expectedBornAt:parent.bornAt},nextDay(7));
+    const child=readSavedPet(storage).pet;
+    assert.equal(child.egg,egg);
+    assert.equal(petSpriteStage(child),1);
+    assert.equal(petSpriteStage(child.lineage.ancestors[0].pet),5);
+    assert.deepEqual(child.lineage.ancestors[0].pet.forms,parent.forms);
+  }
+});
+
+function oldRenewalSave() {
+  const storage=memory();applySavedAction(storage,adopt,start);
+  const value=JSON.parse(storage.getItem(SAVE_KEY));
+  value.pet.forms=[0,2,6,10,15].map(stage=>({stage,trait:'heart',at:nextDay(stage).toISOString().slice(0,10)}));
+  value.pet.highestStage=15;value.pet.revealedStage=15;
+  return memory(JSON.stringify(value));
+}
+
+test('old renewal saves retain their artwork and labels without a migration write',()=>{
+  const storage=oldRenewalSave(),before=storage.getItem(SAVE_KEY);
+  const loaded=readSavedPet(storage).pet;
+  assert.equal(storage.getItem(SAVE_KEY),before);
+  assert.deepEqual(loaded.forms.map(form=>petSpriteStage(loaded,form.stage)),[1,2,3,2,3]);
+  assert.equal(petStageName(loaded),'Renewal 2');
+  applySavedAction(storage,{type:'evolve'},nextDay(20));
+  const entered=storage.getItem(SAVE_KEY);
+  const full={getItem:storage.getItem,setItem(){throw new Error('QuotaExceededError');}};
+  assert.throws(()=>applySavedAction(full,{type:'emerge'},new Date(+nextDay(20)+60000)),error=>error.code==='unavailable');
+  assert.equal(storage.getItem(SAVE_KEY),entered);
+  applySavedAction(storage,{type:'emerge'},new Date(+nextDay(20)+60000));
+  const emerged=readSavedPet(storage).pet;
+  assert.equal(petSpriteStage(emerged),4);
+  assert.equal(petStageName(emerged),'Radiant');
+  assert.deepEqual(emerged.forms.slice(0,loaded.forms.length),loaded.forms);
+  assert.deepEqual(emerged.forms.slice(0,loaded.forms.length).map(form=>petSpriteStage(emerged,form.stage)),[1,2,3,2,3]);
+});
+
+test('legacy ancestral forms remain unchanged as a descendant grows',()=>{
+  const storage=oldRenewalSave(),parent=readSavedPet(storage).pet;
+  applySavedAction(storage,{type:'lineage',name:'Remy II',expectedBornAt:parent.bornAt},nextDay(20));
+  const before=storage.getItem(SAVE_KEY);
+  const child=readSavedPet(storage).pet;
+  assert.equal(storage.getItem(SAVE_KEY),before);
+  assert.deepEqual(child.lineage.ancestors[0].pet.forms,parent.forms);
+  assert.equal(petSpriteStage(child.lineage.ancestors[0].pet),3);
+  assert.equal(petStageName(child.lineage.ancestors[0].pet),'Renewal 2');
+  applySavedAction(storage,{type:'evolve'},nextDay(21));
+  applySavedAction(storage,{type:'emerge'},new Date(+nextDay(21)+60000));
+  const reloaded=readSavedPet(storage).pet;
+  assert.equal(petSpriteStage(reloaded),2);
+  assert.deepEqual(reloaded.lineage.ancestors[0].pet.forms,parent.forms);
+  assert.equal(petSpriteStage(reloaded.lineage.ancestors[0].pet),3);
+});
+
+test('invalid family indices and visual pins cannot corrupt current or archived progress',()=>{
+  const good=memory(),parent=saveReadyFamily(good);
+  applySavedAction(good,{type:'lineage',name:'Remy II',expectedBornAt:parent.bornAt},nextDay(7));
+  for(const mutate of [
+    p=>{p.egg=8;},p=>{p.egg=6.5;},p=>{p.lineage.ancestors[0].pet.egg=8;},
+    ...[0,-1,6,1.5,null,'4'].map(value=>p=>{p.forms[0].visualForm=value;}),
+    p=>{p.forms[0].visualForm=5;},p=>{p.lineage.ancestors[0].pet.forms[1].visualForm=6;},
   ]) {
     const value=JSON.parse(good.getItem(SAVE_KEY));mutate(value.pet);
     const original=JSON.stringify(value),storage=memory(original);

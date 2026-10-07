@@ -42,3 +42,7 @@ footer{justify-content:flex-end}.lcd-incubation{position:absolute;bottom:43px;le
 @media(min-height:1000px){.pet-home .incubating .sprite.large{width:155px;height:155px}}
 
 .reauth-link{display:block;text-decoration:underline;padding-top:8px;min-height:44px;font-weight:600}
+
+/* Eight mystery eggs stay balanced on tablet and phone. */
+.egg-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:399px){.egg-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

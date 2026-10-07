@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {inflateSync} from 'node:zlib';
-import {transition, defaults, EVOLUTION_DAYS, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait, spriteStage, petSpriteStage, careProgress, lineageStatus, generationOf, variantOf} from '../app/engine.ts';
+import {transition, defaults, EVOLUTION_DAYS, FAMILY_COUNT, FORM_COUNT, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait, spriteStage, petSpriteStage, petStageName, careProgress, lineageStatus, generationOf, variantOf} from '../app/engine.ts';
 
 const d=s=>new Date(s);
 const base=d('2026-10-04T02:00:00Z');
@@ -25,8 +25,8 @@ test('food decay uses real hours across DST',()=>{const p=adopt(0,d('2026-03-08T
 test('feeding at positive food preserves the partial interval',()=>{const p=adopt();const fed=transition(p,{type:'feed',food:'snack'},at(p,9*H));assert.equal(fed.food.level,3);assert.equal(foodAt(fed,at(p,16*H-1)).level,3);assert.equal(foodAt(fed,at(p,16*H)).level,2);});
 test('long absence has no negative food debt',()=>{const p=adopt();const t=at(p,100*24*H);const fed=transition(p,{type:'feed',food:'meal'},t);assert.equal(foodAt(p,t).level,0);assert.equal(fed.food.level,2);assert.equal(foodAt(fed,new Date(+t+8*H-1)).level,2);assert.equal(foodAt(fed,new Date(+t+8*H)).level,1);});
 test('full food rejects extra feeding',()=>assert.throws(()=>transition(adopt(),{type:'feed',food:'meal'},at(adopt(),0)),/is full/));
-test('all six food preferences are distinct, internally consistent, and match lore',async()=>{const lore=JSON.parse(await readFile(new URL('../app/lore.json',import.meta.url),'utf8'));assert.equal(new Set(preferences.map(p=>p.likes+'/'+p.dislikes)).size,6);for(let egg=0;egg<6;egg++){assert.notEqual(preferences[egg].likes,preferences[egg].dislikes);assert.equal(foodValue(egg,preferences[egg].likes),2);assert.equal(foodValue(egg,preferences[egg].dislikes),1);assert.equal(lore[egg].likes,preferences[egg].likes);assert.equal(lore[egg].dislikes,preferences[egg].dislikes);}});
-test('each egg gains the documented preferred food value',()=>{for(let egg=0;egg<6;egg++){const p=adopt(egg);const fed=transition(p,{type:'feed',food:preferences[egg].likes},at(p,24*H));assert.equal(fed.food.level,2);}});
+test('all eight food preferences are internally consistent and match lore',async()=>{const lore=JSON.parse(await readFile(new URL('../app/lore.json',import.meta.url),'utf8'));assert.equal(preferences.length,FAMILY_COUNT);assert.equal(lore.length,FAMILY_COUNT);assert.equal(new Set(preferences.slice(0,6).map(p=>p.likes+'/'+p.dislikes)).size,6,'original families retain their six different pairings');for(let egg=0;egg<FAMILY_COUNT;egg++){assert.notEqual(preferences[egg].likes,preferences[egg].dislikes);assert.equal(foodValue(egg,preferences[egg].likes),2);assert.equal(foodValue(egg,preferences[egg].dislikes),1);assert.equal(lore[egg].likes,preferences[egg].likes);assert.equal(lore[egg].dislikes,preferences[egg].dislikes);}});
+test('each egg gains the documented preferred food value',()=>{for(let egg=0;egg<FAMILY_COUNT;egg++){const p=adopt(egg);const fed=transition(p,{type:'feed',food:preferences[egg].likes},at(p,24*H));assert.equal(fed.food.level,2);}});
 test('multiple feeds in a day give one daily feeding entry',()=>{let p=adopt(0,d('2026-10-03T14:00:00Z'));p=transition(p,{type:'feed',food:'meal'},at(p,8*H));p=transition(p,{type:'feed',food:'snack'},at(p,16*H));assert.equal(p.fedDates.length,1);});
 test('repeated same-day check-ins overwrite rather than stack',()=>{let p=adopt();p=transition(p,{type:'checkin',done:['bed']},at(p,1));p=transition(p,{type:'checkin',done:['learning']},at(p,2));assert.equal(Object.keys(p.checkins).length,1);assert.equal(p.checkins[p.bornDate].items.filter(i=>i.done).length,1);assert.equal(careTrait(p),'mind');});
 test('duplicate done IDs cannot multiply trait points',()=>{let p=adopt();p=transition(p,{type:'checkin',done:['bed','bed']},at(p,0));assert.equal(p.checkins[p.bornDate].items.filter(i=>i.done).length,1);});
@@ -82,8 +82,8 @@ test('play counter cannot overflow an exact integer',()=>{
 });
 
 test('every daily cocoon changes the visible form, including the first renewal',()=>{
-  assert.deepEqual([0,1,2,3,4,5].map(spriteStage),[1,2,3,2,3,2]);
-  for(let egg=0;egg<6;egg++){
+  assert.deepEqual([0,1,2,3,4,5,6,7].map(spriteStage),[1,2,3,4,5,4,5,4]);
+  for(let egg=0;egg<FAMILY_COUNT;egg++){
     let p=adopt(egg);
     for(let day=1;day<=14;day++){
       const previous=petSpriteStage(p);
@@ -95,9 +95,10 @@ test('every daily cocoon changes the visible form, including the first renewal',
 });
 
 test('missed days and late emergence change the actual visible form without erasing growth',()=>{
-  for(let egg=0;egg<6;egg++){
+  for(let egg=0;egg<FAMILY_COUNT;egg++){
     let p=adopt(egg);
-    const expected=[1,2,3,2,3];
+    const expected=[1,2,3,4,5];
+    const names=['Hatchling','Growing','Flourishing','Radiant','Ancient'];
     const dates=[1,3,9,27];
     assert.equal(petSpriteStage(p),expected[0]);
     for(const [index,day] of dates.entries()){
@@ -107,8 +108,9 @@ test('missed days and late emergence change the actual visible form without eras
       p=transition(p,{type:'emerge'},at(p,(day+1)*24*H));
       assert.equal(p.revealedStage,day+1,'Calendar growth still catches up');
       assert.equal(petSpriteStage(p),expected[index+1]);
+      assert.equal(petStageName(p),names[index+1],'Names follow actual discoveries rather than absent calendar days');
     }
-    for(const [index,form] of p.forms.entries())assert.equal(petSpriteStage(p,form.stage),expected[index],'History must show the form that actually emerged');
+    for(const [index,form] of p.forms.entries()){assert.equal(petSpriteStage(p,form.stage),expected[index],'History must show the form that actually emerged');assert.equal(petStageName(p,form.stage),names[index]);}
   }
 });
 
@@ -133,18 +135,20 @@ async function silhouette(path){
   return Uint8Array.from({length:width*height},(_,index)=>pixels[index*4+3]>=128?1:0);
 }
 
-test('all six eggs have visibly distinct evolution silhouettes in every expression',async()=>{
-  for(let egg=0;egg<6;egg++){
+test('all eight eggs have five visibly distinct evolution silhouettes in every expression',async()=>{
+  for(let egg=0;egg<FAMILY_COUNT;egg++){
     for(const folder of ['sprites','moods/happy','moods/sad','moods/hungry','moods/sleeping']){
-      const forms=await Promise.all([1,2,3].map(stage=>silhouette(`../public/${folder}/${egg}-${stage}.png`)));
+      const forms=await Promise.all(Array.from({length:FORM_COUNT},(_,index)=>silhouette(`../public/${folder}/${egg}-${index+1}.png`)));
       for(let stage=1;stage<forms.length;stage++){
-        let difference=0,union=0;
-        for(let pixel=0;pixel<forms[stage].length;pixel++){
-          if(forms[stage][pixel]||forms[stage-1][pixel])union++;
-          if(forms[stage][pixel]!==forms[stage-1][pixel])difference++;
+        for(let previous=0;previous<stage;previous++){
+          let difference=0,union=0;
+          for(let pixel=0;pixel<forms[stage].length;pixel++){
+            if(forms[stage][pixel]||forms[previous][pixel])union++;
+            if(forms[stage][pixel]!==forms[previous][pixel])difference++;
+          }
+          assert.ok(union>500,`${folder} egg ${egg} must not be blank`);
+          assert.ok(difference/union>.05,`${folder} egg ${egg}: forms ${previous+1} and ${stage+1} need distinctly different silhouettes`);
         }
-        assert.ok(union>500,`${folder} egg ${egg} must not be blank`);
-        assert.ok(difference/union>.05,`${folder} egg ${egg}: forms ${stage} and ${stage+1} need distinctly different silhouettes`);
       }
     }
   }
@@ -287,4 +291,59 @@ test('stale lineage confirmations and invalid names cannot replace a companion',
   const p=readyForLineage(adopt()),now=at(p,7*24*H);
   assert.throws(()=>transition(p,{type:'lineage',name:'Remy II',expectedBornAt:'another pet'},now),/companion changed/);
   for(const name of ['', ' ', 'a'.repeat(25)])assert.throws(()=>transition(p,{type:'lineage',name,expectedBornAt:p.bornAt},now),/name between/);
+});
+
+test('Nimbus and Pebble adopt, hatch, feed and renew through all five forms',()=>{
+  assert.equal(FAMILY_COUNT,8);assert.equal(FORM_COUNT,5);
+  assert.deepEqual(preferences[6],{likes:'treat',dislikes:'meal'});
+  assert.deepEqual(preferences[7],{likes:'meal',dislikes:'treat'});
+  const sequence=[1,2,3,4,5,4,5,4];
+  const names=['Hatchling','Growing','Flourishing','Radiant','Ancient','Renewal 1','Renewal 2','Renewal 3'];
+  for(const egg of [6,7]) {
+    let p=adopt(egg);
+    assert.equal(hatchSeconds(p,base),60);
+    assert.equal(p.forms[0].visualForm,1);
+    assert.equal(petStageName(p),'Hatchling');
+    p=transition(p,{type:'feed',food:preferences[egg].likes},at(p,24*H));
+    assert.equal(p.food.level,2);
+    for(let day=1;day<sequence.length;day++) {
+      p=evolve(p,at(p,day*24*H));
+      assert.equal(petSpriteStage(p),sequence[day]);
+      assert.equal(p.forms.at(-1).visualForm,sequence[day]);
+      assert.equal(petStageName(p),names[day]);
+    }
+    const child=transition(p,{type:'lineage',name:'New arrival',expectedBornAt:p.bornAt},at(p,8*24*H));
+    assert.equal(child.egg,egg);
+    assert.equal(petSpriteStage(child),1);
+    assert.equal(child.forms[0].visualForm,1);
+    assert.deepEqual(child.lineage.ancestors[0].pet.forms,p.forms);
+  }
+  for(const egg of [-1,8,99,0.5,NaN])assert.throws(()=>adopt(egg),/eight eggs/);
+});
+
+test('legacy renewal appearances stay fixed when Radiant and Ancient are discovered',()=>{
+  let p=adopt();
+  const oldStages=[0,5,12,20,26,50];
+  p.forms=oldStages.map(stage=>({stage,trait:'heart',at:dateKey(at(p,stage*24*H),p.timezone)}));
+  p.revealedStage=50;p.highestStage=50;
+  const history=structuredClone(p.forms),oldVisuals=[1,2,3,2,3,2];
+  const oldNames=['Hatchling','Growing','Flourishing','Renewal 1','Renewal 2','Renewal 3'];
+  for(const [index,stage] of oldStages.entries()) {
+    assert.equal(petSpriteStage(p,stage),oldVisuals[index]);
+    assert.equal(petStageName(p,stage),oldNames[index]);
+  }
+  p=evolve(p,at(p,60*24*H));
+  assert.equal(petSpriteStage(p),4);
+  assert.equal(petStageName(p),'Radiant');
+  p=evolve(p,at(p,61*24*H));
+  assert.equal(petSpriteStage(p),5);
+  assert.equal(petStageName(p),'Ancient');
+  p=evolve(p,at(p,62*24*H));
+  assert.equal(petSpriteStage(p),4);
+  assert.equal(petStageName(p),'Renewal 4');
+  assert.deepEqual(p.forms.slice(0,history.length),history,'old entries are never reinterpreted or rewritten');
+  for(const [index,stage] of oldStages.entries()) {
+    assert.equal(petSpriteStage(p,stage),oldVisuals[index]);
+    assert.equal(petStageName(p,stage),oldNames[index]);
+  }
 });

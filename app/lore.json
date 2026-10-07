@@ -64,5 +64,27 @@
       "Choose one small way to help at home, such as putting your shoes away.",
       "Notice something kind someone did, and tell them you appreciated it."
     ]
+  },
+  {
+    "title": "Nimbus and the Runaway Kite",
+    "story": "Hi! I’m Nimbus. My egg got tangled in a kite during a very windy picnic. Up we went, over the washing line and onto a shed roof. I could hear someone counting steps below. Then a ladder bumped the gutter, and down I came in a bucket. I’ve been checking the weather ever since. A breeze means exploring. Rain means puddles. No wind means a snack break. I packed a star biscuit for the journey here, but I ate it on the way. What’s our first job today?",
+    "quirk": "Checks the wind before deciding where to sit, even indoors.",
+    "likes": "treat",
+    "dislikes": "meal",
+    "careHints": [
+      "Put your shoes away before our next expedition.",
+      "Brush your own teeth, then help Nimbus brush too. The two jobs have separate check-ins."
+    ]
+  },
+  {
+    "title": "Pebble and the Three Taps",
+    "story": "I’m Pebble. My egg spent a long time between two rocks in a dry stream. Whenever a beetle crossed my shell, I tapped three times. Tap, tap, tap. Most beetles hurried away. One stayed and helped me count the stones nearby. We sorted them into smooth ones, lumpy ones, and one that turned out to be a potato. Then someone lifted my egg into a lunch box and carried me here. I like having a job to finish. After that, a garden bowl and a wash will do nicely.",
+    "quirk": "Sorts things by size, then starts again to see if anything has moved.",
+    "likes": "meal",
+    "dislikes": "treat",
+    "careHints": [
+      "Empty your lunch box and put it in its usual spot.",
+      "Wash your hands after playing outside. Give Pebble a wash in Daily care, too."
+    ]
   }
 ]

@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {transition, dateKey, variantForGeneration, type Action, type Pet, type CompanionSnapshot} from './engine.ts';
+import {transition, dateKey, variantForGeneration, FAMILY_COUNT, FORM_COUNT, type Action, type Pet, type CompanionSnapshot} from './engine.ts';
 
 export const SAVE_KEY = 'remybot.pet.v1';
 export const SAVE_LOCK = 'remybot.pet.write';
@@ -27,7 +27,7 @@ const commitment = z.object({
 }).strict();
 const commitments = z.array(commitment).min(1).max(6).refine(items=>new Set(items.map(item=>item.id)).size===items.length);
 const companionSchema = z.object({
-  egg:z.number().int().min(0).max(5),
+  egg:z.number().int().min(0).max(FAMILY_COUNT-1),
   name:z.string().min(1).max(24).refine(value=>!!value.trim()),
   bornDate:calendarDate, bornAt:timestamp, hatchStorySeen:z.boolean().optional(),
   timezone:z.string().refine(value=>{try {new Intl.DateTimeFormat('en', {timeZone:value}); return true;} catch {return false;}}),
@@ -45,10 +45,10 @@ const companionSchema = z.object({
   cocoon:z.object({startedAt:timestamp, endsAt:timestamp, targetStage:stage, trait:kind}).strict().nullable().optional(),
   restUntil:timestamp.nullable().optional(), restedAt:timestamp.optional(),
   restMode:z.enum(['nap','bedtime']).optional(), lastBedtimeAt:timestamp.optional(),
-  forms:z.array(z.object({stage,trait:kind,at:calendarDate}).strict()).min(1),
+  forms:z.array(z.object({stage,trait:kind,at:calendarDate,visualForm:z.number().int().min(1).max(FORM_COUNT).optional()}).strict()).min(1),
 }).strict();
 function lastCareDate(pet:CompanionSnapshot){try{return pet.care?dateKey(new Date(pet.care.lastCompletedAt),pet.timezone):'';}catch{return '';}}
-function validCompanion(pet:CompanionSnapshot){return pet.highestStage>=pet.revealedStage && pet.forms[0]?.stage===0 &&
+function validCompanion(pet:CompanionSnapshot){return pet.highestStage>=pet.revealedStage && pet.forms[0]?.stage===0 && (pet.forms[0].visualForm===undefined||pet.forms[0].visualForm===1) &&
   (!pet.gameWins || pet.gameWins.stars+pet.gameWins.moves<=(pet.playCount??0)) &&
   (!pet.care || (pet.care.xp>=Object.keys(pet.care.completed).length && Object.values(pet.care.completed).every(day=>typeof day==='string'&&day>=pet.bornDate&&day<=lastCareDate(pet)))) &&
   (!pet.restMode || !!pet.restUntil) &&

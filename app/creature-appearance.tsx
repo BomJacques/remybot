@@ -4,12 +4,14 @@ import './creature-appearance.css';
 // Coordinates use the same square frame as the sprites. Each family keeps its
 // silhouette; inherited pixels attach to the head, not to the surrounding LCD.
 const HEADS = [
-  [[112, 117], [123, 96], [105, 102]],
-  [[95, 122], [112, 107], [116, 100]],
-  [[84, 104], [75, 101], [71, 92]],
-  [[111, 104], [107, 100], [92, 105]],
-  [[126, 101], [127, 90], [128, 88]],
-  [[75, 130], [73, 123], [70, 111]],
+  [[112, 117], [123, 96], [105, 102], [65, 90], [62, 99]],
+  [[95, 122], [112, 107], [116, 100], [102, 102], [111, 92]],
+  [[84, 104], [75, 101], [71, 92], [54, 74], [54, 91]],
+  [[111, 104], [107, 100], [92, 105], [61, 92], [65, 105]],
+  [[126, 101], [127, 90], [128, 88], [114, 73], [113, 72]],
+  [[75, 130], [73, 123], [70, 111], [74, 126], [61, 123]],
+  [[80, 91], [64, 89], [61, 99], [63, 101], [78, 100]],
+  [[62, 118], [58, 110], [56, 126], [58, 124], [56, 129]],
 ] as const;
 
 export const appearanceNames = ['Original markings', 'A small head tuft', 'Tiny twin feelers', 'A stepped crest'] as const;
@@ -24,7 +26,7 @@ export function CreatureAppearance({variant = 0, egg, stage, cocoon = false, cla
   children: ReactNode;
 }) {
   const visibleVariant = !cocoon && stage > 0 && variant >= 1 && variant <= 3 ? variant : 0;
-  const [x, y] = HEADS[egg]?.[Math.max(0, Math.min(2, stage - 1))] ?? HEADS[0][0];
+  const [x, y] = HEADS[egg]?.[Math.max(0, Math.min(4, stage - 1))] ?? HEADS[0][0];
   return <span className={`creature-appearance ${className}`} data-variant={visibleVariant}>
     {children}
     {!!visibleVariant && <svg className="creature-inherited-pixels" viewBox="0 0 226 226" aria-hidden="true" focusable="false" shapeRendering="crispEdges">
