@@ -11,7 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "node scripts/deploy-pages.mjs",
-    "test": "node --experimental-strip-types --test tests/engine.test.mjs tests/storage.test.mjs tests/camera.test.mjs",
+    "test": "node --experimental-strip-types --test tests/engine.test.mjs tests/storage.test.mjs tests/camera.test.mjs tests/games.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {transition, defaults, EVOLUTION_DAYS, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait} from '../app/engine.ts';
+import {inflateSync} from 'node:zlib';
+import {transition, defaults, EVOLUTION_DAYS, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait, spriteStage, petSpriteStage} from '../app/engine.ts';
 
 const d=s=>new Date(s);
 const base=d('2026-10-04T02:00:00Z');
@@ -78,5 +79,74 @@ test('play waits for the nap boundary or an explicit wake',()=>{
 test('play counter cannot overflow an exact integer',()=>{
   const p={...adopt(),playCount:Number.MAX_SAFE_INTEGER};
   assert.throws(()=>transition(p,{type:'play'},at(p,1)),/counter is full/);
+});
+
+test('every daily cocoon changes the visible form, including the first renewal',()=>{
+  assert.deepEqual([0,1,2,3,4,5].map(spriteStage),[1,2,3,2,3,2]);
+  for(let egg=0;egg<6;egg++){
+    let p=adopt(egg);
+    for(let day=1;day<=14;day++){
+      const previous=petSpriteStage(p);
+      p=evolve(p,at(p,day*24*H));
+      assert.notEqual(petSpriteStage(p),previous,`Egg ${egg}, day ${day} must reveal a different form`);
+      assert.equal(petSpriteStage(JSON.parse(JSON.stringify(p))),petSpriteStage(p));
+    }
+  }
+});
+
+test('missed days and late emergence change the actual visible form without erasing growth',()=>{
+  for(let egg=0;egg<6;egg++){
+    let p=adopt(egg);
+    const expected=[1,2,3,2,3];
+    const dates=[1,3,9,27];
+    assert.equal(petSpriteStage(p),expected[0]);
+    for(const [index,day] of dates.entries()){
+      const previous=petSpriteStage(p);
+      p=transition(p,{type:'evolve'},at(p,day*24*H));
+      assert.equal(petSpriteStage(p),previous,'Cocoon entry keeps the former appearance until emergence');
+      p=transition(p,{type:'emerge'},at(p,(day+1)*24*H));
+      assert.equal(p.revealedStage,day+1,'Calendar growth still catches up');
+      assert.equal(petSpriteStage(p),expected[index+1]);
+    }
+    for(const [index,form] of p.forms.entries())assert.equal(petSpriteStage(p,form.stage),expected[index],'History must show the form that actually emerged');
+  }
+});
+
+// Decode the committed 8-bit RGBA PNGs so metadata or compression differences cannot
+// make duplicate creature artwork pass the visual asset regression.
+async function silhouette(path){
+  const png=await readFile(new URL(path,import.meta.url));
+  assert.equal(png.readUInt32BE(0),0x89504e47);
+  const width=png.readUInt32BE(16),height=png.readUInt32BE(20),chunks=[];
+  assert.equal(png[24],8);assert.equal(png[25],6);assert.equal(png[28],0);
+  for(let offset=8;offset<png.length;){const length=png.readUInt32BE(offset);if(png.toString('ascii',offset+4,offset+8)==='IDAT')chunks.push(png.subarray(offset+8,offset+8+length));offset+=length+12;}
+  const encoded=inflateSync(Buffer.concat(chunks)),stride=width*4,pixels=Buffer.alloc(stride*height);
+  const paeth=(a,b,c)=>{const p=a+b-c,da=Math.abs(p-a),db=Math.abs(p-b),dc=Math.abs(p-c);return da<=db&&da<=dc?a:db<=dc?b:c;};
+  for(let y=0;y<height;y++){
+    const type=encoded[y*(stride+1)];assert.ok(type<=4);
+    for(let x=0;x<stride;x++){
+      const pos=y*stride+x,a=x>=4?pixels[pos-4]:0,b=y?pixels[pos-stride]:0,c=y&&x>=4?pixels[pos-stride-4]:0;
+      const predictor=[0,a,b,Math.floor((a+b)/2),paeth(a,b,c)][type];
+      pixels[pos]=(encoded[y*(stride+1)+x+1]+predictor)&255;
+    }
+  }
+  return Uint8Array.from({length:width*height},(_,index)=>pixels[index*4+3]>=128?1:0);
+}
+
+test('all six eggs have visibly distinct evolution silhouettes in every expression',async()=>{
+  for(let egg=0;egg<6;egg++){
+    for(const folder of ['sprites','moods/happy','moods/sad','moods/hungry','moods/sleeping']){
+      const forms=await Promise.all([1,2,3].map(stage=>silhouette(`../public/${folder}/${egg}-${stage}.png`)));
+      for(let stage=1;stage<forms.length;stage++){
+        let difference=0,union=0;
+        for(let pixel=0;pixel<forms[stage].length;pixel++){
+          if(forms[stage][pixel]||forms[stage-1][pixel])union++;
+          if(forms[stage][pixel]!==forms[stage-1][pixel])difference++;
+        }
+        assert.ok(union>500,`${folder} egg ${egg} must not be blank`);
+        assert.ok(difference/union>.05,`${folder} egg ${egg}: forms ${stage} and ${stage+1} need distinctly different silhouettes`);
+      }
+    }
+  }
 });
 

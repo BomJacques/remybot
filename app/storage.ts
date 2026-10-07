@@ -39,15 +39,17 @@ const petSchema = z.object({
   food:z.object({level:z.number().int().min(0).max(3), decayAt:timestamp}).strict(),
   pettedDate:calendarDate.nullable(), fedDates:z.array(calendarDate),
   playCount:z.number().int().nonnegative().safe().optional(), lastPlayedAt:timestamp.optional(),
+  gameWins:z.object({stars:z.number().int().nonnegative().safe(),moves:z.number().int().nonnegative().safe()}).strict().optional(),
   revealedStage:stage, highestStage:stage,
   cocoon:z.object({startedAt:timestamp, endsAt:timestamp, targetStage:stage, trait:kind}).strict().nullable().optional(),
   restUntil:timestamp.nullable().optional(), restedAt:timestamp.optional(),
   forms:z.array(z.object({stage,trait:kind,at:calendarDate}).strict()).min(1),
 }).strict().refine(pet=>pet.highestStage>=pet.revealedStage && pet.forms[0]?.stage===0 &&
+  (!pet.gameWins || pet.gameWins.stars+pet.gameWins.moves<=(pet.playCount??0)) &&
   pet.forms.at(-1)?.stage===pet.revealedStage && pet.forms.every((form,index)=>index===0||form.stage>pet.forms[index-1].stage) &&
   (!pet.cocoon || (pet.cocoon.targetStage>pet.revealedStage && pet.cocoon.targetStage<=pet.highestStage &&
     Date.parse(pet.cocoon.endsAt)-Date.parse(pet.cocoon.startedAt)===60000)));
-const saveSchema = z.object({version:z.literal(1), revision:z.number().int().positive().safe(), savedAt:timestamp, pet:petSchema}).strict();
+const saveSchema = z.object({version:z.literal(1), revision:z.number().int().positive().safe(), savedAt:timestamp, pet:petSchema.nullable()}).strict();
 
 function readRaw(storage:SaveStorage) {
   try {return storage.getItem(SAVE_KEY);}
@@ -70,6 +72,20 @@ function decode(raw:string|null):SavePacket {
 /** Never replaces or repairs an unreadable save silently. */
 export function readSavedPet(storage:SaveStorage):SavePacket {
   return decode(readRaw(storage));
+}
+
+/** Explicit reset keeps a revision marker so other tabs see that the pet was reset. */
+export function resetSavedPet(storage:SaveStorage, expected:SavePacket, now=new Date()):SavePacket {
+  const before=readRaw(storage);
+  const current=decode(before);
+  if(!current.pet || current.revision!==expected.revision || current.pet.bornAt!==expected.pet?.bornAt)
+    throw new SaveError('conflict','Progress changed. Close this message and choose Reset again.');
+  const next={version:1 as const,revision:current.revision+1,savedAt:now.toISOString(),pet:null};
+  if(!saveSchema.safeParse(next).success) throw new SaveError('invalid','The reset could not be saved. Your companion is unchanged.');
+  if(readRaw(storage)!==before) throw new SaveError('conflict','Progress changed. Close this message and choose Reset again.');
+  try {storage.setItem(SAVE_KEY,JSON.stringify(next));}
+  catch {throw new SaveError('unavailable','The reset was not saved. Your companion is unchanged.');}
+  return {pet:null,revision:next.revision};
 }
 
 /** Reads the latest save inside the caller's browser lock, rather than trusting a stale UI snapshot. */

@@ -1,0 +1,14 @@
+.draggable-creature-anchor{position:relative;display:grid;place-items:center;width:max-content;height:max-content;max-width:100%;line-height:0}
+.draggable-creature{position:relative;z-index:3;display:block;width:max-content;height:max-content;min-width:44px;min-height:44px;padding:0;border:0;border-radius:22px;background:transparent;color:inherit;line-height:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:none}
+.draggable-creature.is-dragging{cursor:grabbing}
+.draggable-creature:disabled{cursor:default;touch-action:auto;pointer-events:none}
+.draggable-creature .sprite{display:block;pointer-events:none;-webkit-user-drag:none}
+.pet-home .device:not(.incubating) .draggable-creature .sprite.large{width:clamp(128px,17dvh,170px);height:clamp(128px,17dvh,170px)}
+.draggable-creature:focus-visible{outline:2px dashed #354c27;outline-offset:3px}
+.draggable-creature-instructions{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Translate the outer button; keep the original sprite animation on its inner image. */
+.laughing .creature-stage .draggable-creature>.sprite{animation:tickle-laugh .28s steps(2,end) 6}
+.sleepy .draggable-creature>.sprite{opacity:.65;animation-duration:6s}
+.cocooning .creature-stage .draggable-creature>.sprite{animation:cocoon-in 1.8s steps(6,end) forwards}
+.hatching .creature-stage .draggable-creature>.sprite,.evolving .creature-stage .draggable-creature>.sprite{animation:creature-emerge 1.6s ease-out forwards}
+@media(prefers-reduced-motion:reduce){.draggable-creature,.draggable-creature .sprite{animation:none!important;transition:none!important}.cocooning .creature-stage .draggable-creature>.sprite,.hatching .creature-stage .draggable-creature>.sprite,.evolving .creature-stage .draggable-creature>.sprite{opacity:1;transform:none}}

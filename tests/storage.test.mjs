@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {defaults,hatchSeconds,cocoonSeconds,growth} from '../app/engine.ts';
-import {SAVE_KEY,SaveError,readSavedPet,applySavedAction} from '../app/storage.ts';
+import {SAVE_KEY,SaveError,readSavedPet,applySavedAction,resetSavedPet} from '../app/storage.ts';
 
 const start=new Date('2026-10-04T02:00:00Z');
 const adopt={type:'adopt',egg:0,name:'Remy',timezone:'Australia/Brisbane',commitments:defaults};
@@ -10,6 +10,32 @@ function memory(initial=null) {
   return {getItem(key){assert.equal(key,SAVE_KEY);return raw;},setItem(key,value){assert.equal(key,SAVE_KEY);raw=value;}};
 }
 const nextDay=days=>new Date(+start+days*86400000+60000);
+
+test('explicit reset clears the pet and permits a fresh egg without losing revision history',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  const before=applySavedAction(storage,{type:'play',game:'stars'},nextDay(0));
+  const reset=resetSavedPet(storage,before,nextDay(0));
+  assert.deepEqual(readSavedPet(storage),{pet:null,revision:before.revision+1});
+  const fresh=applySavedAction(storage,{...adopt,egg:5,name:'New friend'},nextDay(0));
+  assert.equal(fresh.revision,reset.revision+1);
+  assert.equal(fresh.pet.egg,5);
+  assert.equal(fresh.pet.gameWins,undefined);
+  assert.deepEqual(fresh.pet.checkins,{});
+});
+
+test('reset refuses stale confirmations and leaves failed writes untouched',()=>{
+  const storage=memory();const stale=applySavedAction(storage,adopt,start);
+  const current=applySavedAction(storage,{type:'play',game:'stars'},nextDay(0));
+  const raw=storage.getItem(SAVE_KEY);
+  assert.throws(()=>resetSavedPet(storage,stale),error=>error.code==='conflict');
+  const full={getItem:storage.getItem,setItem(){throw new Error('QuotaExceededError');}};
+  assert.throws(()=>resetSavedPet(full,current),error=>error.code==='unavailable');
+  assert.equal(storage.getItem(SAVE_KEY),raw);
+  resetSavedPet(storage,current);
+  const empty=storage.getItem(SAVE_KEY);
+  assert.throws(()=>resetSavedPet(storage,current),error=>error.code==='conflict');
+  assert.equal(storage.getItem(SAVE_KEY),empty);
+});
 
 test('first visit has no pet and reading does not write demo progress',()=>{
   const storage=memory();
@@ -165,5 +191,35 @@ test('rejected play during egg, cocoon or nap does not rewrite progress',()=>{
     const original=storage.getItem(SAVE_KEY);
     assert.throws(()=>applySavedAction(storage,{type:'play'},now));
     assert.equal(storage.getItem(SAVE_KEY),original);
+  }
+});
+
+test('game progression persists independently and preserves earlier play totals',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  applySavedAction(storage,{type:'play'},nextDay(0));
+  const legacy=storage.getItem(SAVE_KEY);
+  assert.equal(readSavedPet(storage).pet.gameWins,undefined);
+  assert.equal(storage.getItem(SAVE_KEY),legacy);
+  applySavedAction(storage,{type:'play',game:'stars'},nextDay(0));
+  applySavedAction(storage,{type:'play',game:'moves'},nextDay(0));
+  applySavedAction(storage,{type:'play',game:'stars'},nextDay(0));
+  const reloaded=readSavedPet(storage).pet;
+  assert.deepEqual(reloaded.gameWins,{stars:2,moves:1});
+  assert.equal(reloaded.playCount,4);
+  assert.deepEqual(reloaded.checkins,{});
+  assert.equal(reloaded.food.level,3);
+});
+
+test('failed or invalid game completions cannot advance a saved level',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  const previous=storage.getItem(SAVE_KEY);
+  const full={getItem:storage.getItem,setItem(){throw new Error('QuotaExceededError');}};
+  assert.throws(()=>applySavedAction(full,{type:'play',game:'stars'},nextDay(0)),/not saved/);
+  assert.throws(()=>applySavedAction(storage,{type:'play',game:'unknown'},nextDay(0)),/Choose one/);
+  assert.equal(storage.getItem(SAVE_KEY),previous);
+  for(const wins of [{stars:-1,moves:0},{stars:1},{stars:1,moves:0},{stars:0.5,moves:0}]){
+    const broken=JSON.parse(previous);broken.pet.gameWins=wins;
+    const saved=memory(JSON.stringify(broken));
+    assert.throws(()=>readSavedPet(saved),SaveError);
   }
 });

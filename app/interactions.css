@@ -7,10 +7,14 @@
 .creature-tickle:disabled {cursor: default;}
 .laughing .creature-stage > .sprite {animation: tickle-laugh .28s steps(2,end) 6;}
 .laugh-pixel {position: absolute; right: 5%; top: 8%; font: bold 13px var(--mono); transform: rotate(8deg); pointer-events: none; animation: laugh-pop 1.8s ease-out both;}
-.companion-extra {display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; max-width: 500px; margin: 20px auto 0; color: #65745d; font-size: 12px;}
-.companion-extra > span {max-width: 260px;}
+.companion-extra {display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 10px; width: 100%; max-width: 500px; margin: 16px auto 0; color: #65745d; font-size: 12px;}
+.companion-extra > span {grid-column: 1 / -1; text-align: center;}
 .camera-button {display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; min-height: 44px; padding: 9px 14px; border: 1px solid #c7cbbd; border-radius: 12px; color: #3d503b; background: #edeedf; font-size: 13px; cursor: pointer; touch-action: manipulation;}
 .camera-button:hover {background: #e2e6d1;}
+.camera-button:disabled {opacity: .55; cursor: default;}
+.pet-home footer.pet-menu {display: flex; justify-content: center; align-items: center; gap: 28px; width: 100%; padding: 0 0 max(16px,env(safe-area-inset-bottom)); border: 0; margin: 0;}
+.footer-reset {display: inline-flex; align-items: center; gap: 7px; min-height: 44px; background: none; border: 0; color: #65745d; font: 12px var(--mono); cursor: pointer;}
+.reset-confirm {background: #824b37;}
 .playtime-card {margin: 22px 0 10px; padding: 16px; border: 1px solid #d5dbc6; border-radius: 16px; background: #edf0df;}
 .playtime-card > div {display: flex; align-items: center; gap: 12px; color: #3d503b;}
 .playtime-card strong,.playtime-card small {display: block;}
