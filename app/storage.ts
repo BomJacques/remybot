@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {transition, dateKey, variantForGeneration, FAMILY_COUNT, FORM_COUNT, type Action, type Pet, type CompanionSnapshot} from './engine.ts';
+import {transition, dateKey, variantForGeneration, discoveredFormCount, FAMILY_COUNT, FORM_COUNT, KEEPSAKE_CHOICES, type Action, type Pet, type CompanionSnapshot} from './engine.ts';
 
 export const SAVE_KEY = 'remybot.pet.v1';
 export const SAVE_LOCK = 'remybot.pet.write';
@@ -41,6 +41,7 @@ const companionSchema = z.object({
   playCount:z.number().int().nonnegative().safe().optional(), lastPlayedAt:timestamp.optional(),
   gameWins:z.object({stars:z.number().int().nonnegative().safe(),moves:z.number().int().nonnegative().safe()}).strict().optional(),
   care:z.object({xp:z.number().int().nonnegative().safe(),completed:z.object({brush:calendarDate.optional(),wash:calendarDate.optional(),pat:calendarDate.optional()}).strict(),lastCompletedAt:timestamp}).strict().optional(),
+  adventure:z.object({chapter:z.number().int().min(0).max(KEEPSAKE_CHOICES.length),care:z.boolean(),play:z.boolean(),items:z.array(z.string()).max(KEEPSAKE_CHOICES.length),equipped:z.string().nullable()}).strict().optional(),
   revealedStage:stage, highestStage:stage,
   cocoon:z.object({startedAt:timestamp, endsAt:timestamp, targetStage:stage, trait:kind}).strict().nullable().optional(),
   restUntil:timestamp.nullable().optional(), restedAt:timestamp.optional(),
@@ -48,9 +49,18 @@ const companionSchema = z.object({
   forms:z.array(z.object({stage,trait:kind,at:calendarDate,visualForm:z.number().int().min(1).max(FORM_COUNT).optional()}).strict()).min(1),
 }).strict();
 function lastCareDate(pet:CompanionSnapshot){try{return pet.care?dateKey(new Date(pet.care.lastCompletedAt),pet.timezone):'';}catch{return '';}}
+function validAdventure(pet:CompanionSnapshot){
+ const adventure=pet.adventure;if(!adventure)return true;
+ const discoveries=Math.min(KEEPSAKE_CHOICES.length,discoveredFormCount(pet));
+ return adventure.chapter<=discoveries&&adventure.items.length===adventure.chapter&&
+  adventure.items.every((id,index)=>(KEEPSAKE_CHOICES[index] as readonly string[]|undefined)?.includes(id))&&
+  (adventure.equipped===null||adventure.items.includes(adventure.equipped))&&
+  (adventure.chapter<discoveries||(!adventure.care&&!adventure.play));
+}
 function validCompanion(pet:CompanionSnapshot){return pet.highestStage>=pet.revealedStage && pet.forms[0]?.stage===0 && (pet.forms[0].visualForm===undefined||pet.forms[0].visualForm===1) &&
   (!pet.gameWins || pet.gameWins.stars+pet.gameWins.moves<=(pet.playCount??0)) &&
   (!pet.care || (pet.care.xp>=Object.keys(pet.care.completed).length && Object.values(pet.care.completed).every(day=>typeof day==='string'&&day>=pet.bornDate&&day<=lastCareDate(pet)))) &&
+  validAdventure(pet) &&
   (!pet.restMode || !!pet.restUntil) &&
   (pet.restMode!=='bedtime' || (!!pet.lastBedtimeAt && Date.parse(pet.restUntil!)-Date.parse(pet.lastBedtimeAt)===8*3600000)) &&
   pet.forms.at(-1)?.stage===pet.revealedStage && pet.forms.every((form,index)=>index===0||form.stage>pet.forms[index-1].stage) &&

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {inflateSync} from 'node:zlib';
-import {transition, defaults, EVOLUTION_DAYS, FAMILY_COUNT, FORM_COUNT, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait, spriteStage, petSpriteStage, petStageName, careProgress, lineageStatus, generationOf, variantOf} from '../app/engine.ts';
+import {transition, defaults, EVOLUTION_DAYS, FAMILY_COUNT, FORM_COUNT, KEEPSAKE_CHOICES, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait, spriteStage, petSpriteStage, petStageName, discoveredFormCount, careProgress, adventureProgress, lineageStatus, generationOf, variantOf} from '../app/engine.ts';
 
 const d=s=>new Date(s);
 const base=d('2026-10-04T02:00:00Z');
@@ -346,4 +346,170 @@ test('legacy renewal appearances stay fixed when Radiant and Ancient are discove
     assert.equal(petSpriteStage(p,stage),oldVisuals[index]);
     assert.equal(petStageName(p,stage),oldNames[index]);
   }
+});
+
+test('adventures start empty without inventing credit from old care, games or check-ins',()=>{
+  const original=adopt();
+  const p={...original,playCount:25,gameWins:{stars:10,moves:15},care:{xp:8,completed:{brush:original.bornDate},lastCompletedAt:original.bornAt}};
+  assert.deepEqual(adventureProgress(p,base),{chapter:0,unlocked:false,careDone:false,playDone:false,ready:false,finished:false,equipped:null,items:[]});
+  assert.deepEqual(adventureProgress(p,at(p,0)),{chapter:0,unlocked:true,careDone:false,playDone:false,ready:false,finished:false,equipped:null,items:[]});
+  assert.equal(p.adventure,undefined);
+  assert.equal(transition(p,{type:'decorate',id:null},at(p,0)).adventure,undefined);
+  for(const action of [{type:'pet'},{type:'play'},{type:'checkin',done:['bed']}])assert.equal(transition(p,action,at(p,1)).adventure,undefined);
+});
+
+test('the first keepsake accepts care or a completed game and refuses a full-tummy feed',()=>{
+  const p=adopt(),now=at(p,1);
+  assert.equal(p.food.level,3);
+  assert.throws(()=>transition(p,{type:'feed',food:'meal'},now),/is full/);
+  const activities=[...['brush','wash','pat'].map(activity=>({type:'care',activity})),{type:'play',game:'stars'},{type:'play',game:'moves'},{type:'toyPlay'}];
+  for(const action of activities) {
+    const earned=transition(p,action,now),progress=adventureProgress(earned,now);
+    assert.equal(progress.ready,true,JSON.stringify(action));
+    assert.equal(progress.careDone,action.type==='care');
+    assert.equal(progress.playDone,action.type!=='care');
+    const collected=transition(earned,{type:'keepsake',id:'flower'},now);
+    assert.deepEqual(collected.adventure,{chapter:1,care:false,play:false,items:['flower'],equipped:'flower'});
+    assert.throws(()=>transition(collected,{type:'keepsake',id:'flower'},now),/Discover the next creature form/);
+    assert.deepEqual(collected.checkins,{});
+  }
+  const fed=transition(p,{type:'feed',food:'meal'},at(p,8*H));
+  assert.equal(adventureProgress(fed,at(p,8*H)).ready,true);
+  assert.equal(fed.care,undefined,'feeding does not invent care mastery XP');
+  assert.equal(fed.adventure.care,true);
+});
+
+test('later adventures require both fresh care and play; locked chapters cannot bank tasks',()=>{
+  let p=adopt();p=transition(p,{type:'care',activity:'brush'},at(p,0));
+  assert.throws(()=>transition(p,{type:'keepsake',id:'star'},at(p,0)),/two keepsakes/);
+  p=transition(p,{type:'keepsake',id:'leaf'},at(p,0));
+  p=transition(p,{type:'care',activity:'wash'},at(p,1));
+  p=transition(p,{type:'play',game:'stars'},at(p,2));
+  assert.deepEqual(p.adventure,{chapter:1,care:false,play:false,items:['leaf'],equipped:'leaf'});
+  p=evolve(p,at(p,24*H));
+  const now=at(p,24*H+60000);
+  assert.equal(adventureProgress(p,now).unlocked,true);
+  assert.equal(adventureProgress(p,now).ready,false);
+  p=transition(p,{type:'care',activity:'brush'},now);
+  assert.equal(adventureProgress(p,now).ready,false);
+  assert.throws(()=>transition(p,{type:'keepsake',id:'moon'},now),/care and play/);
+  p=transition(p,{type:'toyPlay'},now);
+  assert.equal(adventureProgress(p,now).ready,true);
+  assert.throws(()=>transition(p,{type:'keepsake',id:'leaf'},now),/two keepsakes/);
+  const xp=p.care.xp;
+  p=transition(p,{type:'care',activity:'brush'},now);
+  assert.equal(p.care.xp,xp,'same-day completed practice does not duplicate XP');
+  p=transition(p,{type:'keepsake',id:'moon'},now);
+  assert.deepEqual(p.adventure,{chapter:2,care:false,play:false,items:['leaf','moon'],equipped:'moon'});
+});
+
+test('adventure tasks survive days and reloads; calendar catch-up never unlocks unhatched forms',()=>{
+  let p=adopt();p=transition(p,{type:'toyPlay'},at(p,0));
+  assert.equal(adventureProgress(p,at(p,40*24*H)).ready,true);
+  p=transition(p,{type:'keepsake',id:'leaf'},at(p,40*24*H));
+  assert.equal(p.highestStage,40);
+  assert.equal(adventureProgress(p,at(p,40*24*H)).unlocked,false);
+  p=transition(p,{type:'evolve'},at(p,41*24*H));
+  assert.equal(adventureProgress(p,at(p,41*24*H)).unlocked,false,'a pending cocoon reveals no new chapter');
+  p=transition(p,{type:'emerge'},at(p,70*24*H));
+  assert.equal(discoveredFormCount(p),2);
+  assert.equal(adventureProgress(p,at(p,70*24*H)).chapter,1);
+  p=transition(p,{type:'care',activity:'wash'},at(p,70*24*H));
+  p=JSON.parse(JSON.stringify(p));
+  assert.equal(adventureProgress(p,at(p,80*24*H)).careDone,true);
+  assert.equal(adventureProgress(p,at(p,80*24*H)).playDone,false);
+  p=transition(p,{type:'play',game:'moves'},at(p,80*24*H));
+  assert.equal(adventureProgress(p,at(p,80*24*H)).ready,true);
+  assert.equal(transition(p,{type:'keepsake',id:'star'},at(p,80*24*H)).adventure.chapter,2);
+});
+
+test('keepsakes stop at five unique chapter choices and finished adventures cannot accumulate tasks',()=>{
+  let p=adopt();const owned=[];
+  for(let chapter=0;chapter<KEEPSAKE_CHOICES.length;chapter++) {
+    if(chapter>0)p=evolve(p,at(p,chapter*24*H));
+    const now=at(p,chapter*24*H+60000);
+    p=transition(p,{type:'care',activity:'brush'},now);
+    if(chapter>0)p=transition(p,{type:'toyPlay'},now);
+    const id=KEEPSAKE_CHOICES[chapter][chapter%2];
+    owned.push(id);p=transition(p,{type:'keepsake',id},now);
+    assert.equal(p.adventure.chapter,chapter+1);
+    assert.deepEqual(p.adventure.items,owned);
+    assert.equal(p.adventure.equipped,id);
+    assert.equal(p.adventure.care,false);assert.equal(p.adventure.play,false);
+  }
+  const now=at(p,6*24*H),finished=structuredClone(p.adventure);
+  assert.equal(adventureProgress(p,now).finished,true);
+  assert.equal(adventureProgress(p,now).ready,false);
+  p=transition(p,{type:'care',activity:'wash'},now);
+  p=transition(p,{type:'toyPlay'},now);
+  p=evolve(p,at(p,7*24*H));
+  assert.deepEqual(p.adventure,finished);
+  assert.throws(()=>transition(p,{type:'keepsake',id:'lamp'},at(p,8*24*H)),/collection is complete/);
+  const view=adventureProgress(p,now);view.items.push('fake');
+  assert.deepEqual(p.adventure.items,owned,'selectors never expose mutable saved arrays');
+});
+
+test('completed toy play counts as time together without changing named-game difficulty or chores',()=>{
+  let p=adopt();p=transition(p,{type:'play',game:'stars'},at(p,0));
+  const played=transition(p,{type:'toyPlay'},at(p,1));
+  assert.equal(played.playCount,2);
+  assert.equal(played.lastPlayedAt,at(p,1).toISOString());
+  assert.deepEqual(played.gameWins,{stars:1,moves:0});
+  assert.deepEqual(played.food,p.food);assert.deepEqual(played.checkins,p.checkins);
+  assert.equal(played.adventure.play,true);
+  assert.throws(()=>transition({...p,playCount:Number.MAX_SAFE_INTEGER},{type:'toyPlay'},at(p,1)),/counter is full/);
+});
+
+test('adventure rewards respect egg, cocoon and sleep guards; owned decorations can change while resting',()=>{
+  const original=adopt();
+  for(const action of [{type:'toyPlay'},{type:'keepsake',id:'leaf'},{type:'decorate',id:null}])assert.throws(()=>transition(original,action,base),/still getting ready/);
+  let p=transition(original,{type:'toyPlay'},at(original,0));
+  const asleep=transition(p,{type:'nap'},at(p,1));
+  assert.equal(adventureProgress(asleep,at(p,2)).ready,false);
+  assert.equal(adventureProgress(asleep,at(p,2)).playDone,true);
+  for(const action of [{type:'toyPlay'},{type:'keepsake',id:'leaf'}])assert.throws(()=>transition(asleep,action,at(p,2)),/napping/);
+  const cocoon=transition(p,{type:'evolve'},at(p,24*H));
+  assert.equal(adventureProgress(cocoon,at(p,24*H)).ready,false);
+  for(const action of [{type:'toyPlay'},{type:'keepsake',id:'leaf'}])assert.throws(()=>transition(cocoon,action,at(p,24*H)),/cocoon/);
+  p=transition(p,{type:'keepsake',id:'leaf'},at(p,1));
+  assert.throws(()=>transition(p,{type:'decorate',id:'flower'},at(p,2)),/have collected/);
+  p=transition(p,{type:'nap'},at(p,2));
+  p=transition(p,{type:'decorate',id:null},at(p,3));
+  assert.equal(p.adventure.equipped,null);
+  p=transition(p,{type:'decorate',id:'leaf'},at(p,4));
+  assert.equal(p.adventure.equipped,'leaf');
+  p=transition(p,{type:'wake'},at(p,5));
+  p=transition(p,{type:'evolve'},at(p,24*H));
+  p=transition(p,{type:'decorate',id:null},at(p,24*H));
+  assert.equal(p.adventure.equipped,null);
+});
+
+test('legacy repeated forms do not unlock extra adventure chapters',()=>{
+  const p=adopt();
+  p.forms=Array.from({length:9},(_,stage)=>({stage,trait:'heart',at:dateKey(at(p,stage*24*H),p.timezone)}));
+  p.highestStage=8;p.revealedStage=8;
+  p.adventure={chapter:3,care:false,play:false,items:['leaf','moon','kite'],equipped:'kite'};
+  assert.equal(discoveredFormCount(p),3);
+  assert.equal(adventureProgress(p,at(p,100*24*H)).unlocked,false);
+  const next=evolve(p,at(p,100*24*H));
+  assert.equal(petSpriteStage(next),4);
+  assert.equal(adventureProgress(next,at(p,100*24*H+60000)).unlocked,true);
+});
+
+test('a different-family lineage archives the whole adventure and starts with fresh tasks and items',()=>{
+  let p=adopt(0);p=transition(p,{type:'care',activity:'pat'},at(p,0));
+  p=transition(p,{type:'keepsake',id:'flower'},at(p,0));
+  p=readyForLineage(p);
+  p=transition(p,{type:'play',game:'moves'},at(p,3*24*H));
+  const now=at(p,7*24*H),before=structuredClone(p);
+  const child=transition(p,{type:'lineage',egg:7,name:'Pebble junior',expectedBornAt:p.bornAt},now);
+  assert.equal(child.egg,7);assert.equal(child.adventure,undefined);
+  assert.deepEqual(adventureProgress(child,at(child,0)).items,[]);
+  assert.equal(adventureProgress(child,at(child,0)).playDone,false);
+  assert.deepEqual(child.lineage.ancestors[0].pet.adventure,before.adventure);
+  assert.equal(child.lineage.ancestors[0].pet.egg,0);
+  assert.deepEqual(child.gameWins,p.gameWins);assert.equal(child.care.xp,p.care.xp);
+  assert.equal(transition(p,{type:'lineage',name:'Same family',expectedBornAt:p.bornAt},now).egg,0);
+  for(const egg of [-1,8,1.5,null,NaN])assert.throws(()=>transition(p,{type:'lineage',egg,name:'Invalid',expectedBornAt:p.bornAt},now),/eight eggs/);
+  assert.deepEqual(p,before);
 });

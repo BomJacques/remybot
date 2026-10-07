@@ -9,11 +9,12 @@ type Reaction = 'hop' | 'laugh' | null;
 const BUBBLES = [0, 1, 2, 3, 4, 5];
 const LAUGHS = ['Hee hee!', 'Ha! That tickles!', 'Again!'];
 
-export function ToyBox({name, spriteSrc, appearance, onReact}: {
+export function ToyBox({name, spriteSrc, appearance, onReact, onComplete}: {
   name: string;
   spriteSrc: string;
   appearance?: {egg: number; stage: number; variant: number};
   onReact: () => void;
+  onComplete: () => Promise<boolean>;
 }) {
   const [toy, setToy] = useState<Toy>('ball');
   const [message, setMessage] = useState('Tap the ball to toss it.');
@@ -23,15 +24,34 @@ export function ToyBox({name, spriteSrc, appearance, onReact}: {
   const [reactionId, setReactionId] = useState(0);
   const [popped, setPopped] = useState<number[]>([]);
   const [bubbleRound, setBubbleRound] = useState(0);
+  const [tosses, setTosses] = useState(0);
+  const [playSaved, setPlaySaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const completionLock = useRef(false);
+  const completed = useRef(false);
+  const mounted = useRef(true);
   const reactionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const throwTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const laughCount = useRef(0);
   const throwingRef = useRef(false);
 
-  useEffect(() => () => {
+  useEffect(() => {mounted.current = true;return () => {
+    mounted.current = false;
     if (reactionTimer.current) clearTimeout(reactionTimer.current);
     if (throwTimer.current) clearTimeout(throwTimer.current);
-  }, []);
+  };}, []);
+
+  async function finishPlay() {
+    if (completed.current || completionLock.current) return;
+    completionLock.current = true;setSaving(true);setSaveError(false);
+    try {
+      const saved = await onComplete();
+      if (saved) completed.current = true;
+      if (mounted.current) {setPlaySaved(saved);setSaveError(!saved);}
+    } catch {if (mounted.current) setSaveError(true);}
+    finally {completionLock.current = false;if (mounted.current) setSaving(false);}
+  }
 
   function react(kind: Exclude<Reaction, null>) {
     if (reactionTimer.current) clearTimeout(reactionTimer.current);
@@ -54,12 +74,15 @@ export function ToyBox({name, spriteSrc, appearance, onReact}: {
     if (throwingRef.current) return;
     throwingRef.current = true;
     setThrowing(true);
+    const nextTosses = tosses + 1;
+    setTosses(nextTosses);
     setBallSide(side => side === 'left' ? 'right' : 'left');
     setMessage(ballSide === 'left' ? 'Boing! Coming back to you!' : 'Nice throw!');
     react('hop');
     throwTimer.current = setTimeout(() => {
       throwingRef.current = false;
       setThrowing(false);
+      if (nextTosses >= 3) void finishPlay();
     }, 1000);
   }
 
@@ -67,6 +90,7 @@ export function ToyBox({name, spriteSrc, appearance, onReact}: {
     if (popped.includes(id)) return;
     const next = [...popped, id];
     setPopped(next);
+    if (next.length === BUBBLES.length) void finishPlay();
     setMessage(next.length === BUBBLES.length ? 'All popped! Blow some more?' : ['Pop!', 'Plip!', 'Pop pop!'][next.length % 3]);
     react('hop');
   }
@@ -137,6 +161,8 @@ export function ToyBox({name, spriteSrc, appearance, onReact}: {
     {toy === 'bubbles'
       ? <button type="button" className="toy-action" onClick={blowBubbles}>Blow more bubbles <span aria-hidden="true">○◦</span></button>
       : <button type="button" className="toy-action" onClick={tossBall} aria-disabled={throwing}>Toss the ball <span aria-hidden="true">↗</span></button>}
+    <p className="toy-hint" role="status">{saving ? 'Saving playtime…' : playSaved ? 'Playtime saved. Keep playing as long as you like.' : toy === 'ball' ? `Toss the ball 3 times to finish a play step. ${Math.min(3,tosses)} / 3` : `Pop all 6 bubbles to finish a play step. ${popped.length} / 6`}</p>
+    {saveError && <button type="button" className="toy-action" disabled={saving} onClick={() => void finishPlay()}>Try saving playtime again</button>}
     <p className="toy-hint">Tap {name} to make him laugh.</p>
   </div>;
 }

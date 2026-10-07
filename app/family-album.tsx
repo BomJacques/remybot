@@ -5,6 +5,7 @@ import {Check, ChevronRight, Egg, Sprout, Timer} from 'lucide-react';
 import {generationOf, hatchSeconds, lineageStatus, petSpriteStage, variantOf, type Pet} from './engine';
 import {eggs} from './eggs';
 import {appearanceNames, CreatureAppearance} from './creature-appearance';
+import {adventures,keepsakes} from './adventure-content';
 import './family-album.css';
 
 function FamilyPortrait({pet, variant = 0, stage, name}: {pet: Pick<Pet, 'egg'>; variant?: number; stage: number; name: string}) {
@@ -14,11 +15,12 @@ function FamilyPortrait({pet, variant = 0, stage, name}: {pet: Pick<Pet, 'egg'>;
 }
 
 /** The engine rechecks eligibility and the caller's saved birth ID before saving. */
-export function FamilyAlbum({pet, now, onBegin}: {pet: Pet; now: Date; onBegin: (name: string) => Promise<boolean>}) {
+export function FamilyAlbum({pet, now, onBegin}: {pet: Pet; now: Date; onBegin: (name: string, egg: number) => Promise<boolean>}) {
   const status = lineageStatus(pet, now);
   const generation = generationOf(pet);
   const variant = variantOf(pet);
   const [name, setName] = useState(`${pet.name.slice(0, 20)} ${generation + 1}`);
+  const [selectedEgg, setSelectedEgg] = useState(pet.egg);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -32,6 +34,7 @@ export function FamilyAlbum({pet, now, onBegin}: {pet: Pet; now: Date; onBegin: 
 
   useEffect(() => {
     setName(`${pet.name.slice(0, 20)} ${generation + 1}`);
+    setSelectedEgg(pet.egg);
     setConfirming(false);
     setError('');
   }, [pet.bornAt]);
@@ -44,7 +47,7 @@ export function FamilyAlbum({pet, now, onBegin}: {pet: Pet; now: Date; onBegin: 
     setSaving(true);
     setError('');
     try {
-      if (!await onBegin(name.trim())) setError('The new egg was not saved. You can try again.');
+      if (!await onBegin(name.trim(), selectedEgg)) setError('The new egg was not saved. You can try again.');
     } catch {
       setError('The new egg was not saved. You can try again.');
     } finally {
@@ -61,7 +64,7 @@ export function FamilyAlbum({pet, now, onBegin}: {pet: Pet; now: Date; onBegin: 
 
     <div className="family-next">
       <div className="family-section-heading"><Sprout size={19}/><h3>The next generation</h3></div>
-      <p>Your companion never dies. When you’re ready, raise a new egg from the same family. Every new generation has a small change to its features.</p>
+      <p>Your companion never dies. When you’re ready, continue this family or try a different egg. Earlier companions and their keepsakes stay in this album. Each new generation has a small change to its features.</p>
       <div className="family-requirements">
         <div><span>{status.daysRemaining === 0 ? <Check size={15}/> : <Timer size={15}/>} Spend 7 days together</span><strong>{Math.max(0, 7 - status.daysRemaining)} / 7 days</strong><progress aria-label="Days together before a new generation" max={7} value={Math.max(0, 7 - status.daysRemaining)}/></div>
         <div><span>{status.evolutionsRemaining === 0 ? <Check size={15}/> : <Egg size={15}/>} Complete 2 cocoons</span><strong>{Math.max(0, 2 - status.evolutionsRemaining)} / 2</strong><progress aria-label="Cocoons completed before a new generation" max={2} value={Math.max(0, 2 - status.evolutionsRemaining)}/></div>
@@ -69,14 +72,15 @@ export function FamilyAlbum({pet, now, onBegin}: {pet: Pet; now: Date; onBegin: 
 
       {!status.eligible && <p className="family-wait">{pet.cocoon ? 'Come back after this cocoon hatches.' : asleep ? 'Let your companion wake up first.' : currentStage === 0 ? 'Your first egg is still getting ready.' : 'Keep exploring together. There is no need to start a new generation as soon as it unlocks.'}</p>}
       {status.eligible && !confirming && <div className="family-new-egg">
-        <div className="family-egg-preview"><FamilyPortrait pet={pet} stage={0} name="Next generation egg"/><div><span className="family-eyebrow">GENERATION {generation + 1}</span><h4>{eggs[pet.egg].name} egg</h4><p>Its new features are a hatching surprise.</p></div></div>
+        <div className="family-egg-picker" role="group" aria-label="Choose your next egg">{eggs.map((egg, index) => <button key={egg.id} aria-pressed={selectedEgg === index} onClick={() => setSelectedEgg(index)}><FamilyPortrait pet={{egg:index}} stage={0} name={egg.name}/><span>{egg.name}</span>{selectedEgg === index && <Check size={14} aria-hidden="true"/>}</button>)}</div>
+        <div className="family-egg-preview"><FamilyPortrait pet={{egg:selectedEgg}} stage={0} name="Next generation egg"/><div><span className="family-eyebrow">GENERATION {generation + 1}</span><h4>{eggs[selectedEgg].name} egg</h4><p>{eggs[selectedEgg].story}</p></div></div>
         <label htmlFor={inputId}>Name your next companion</label>
         <input id={inputId} className="text-input" value={name} onChange={event => setName(event.target.value)} maxLength={24} autoComplete="off"/>
         <button className="secondary-button" disabled={!validName} onClick={() => setConfirming(true)}>Choose this egg <ChevronRight size={17}/></button>
       </div>}
       {status.eligible && confirming && <div className="family-confirm">
         <h4 tabIndex={-1} ref={confirmingHeading}>Ready to raise {name.trim()}?</h4>
-        <p>{pet.name} will stay in your family album with every form and check-in. {name.trim()} starts as an egg with fresh daily care. Your game levels and care practice carry on.</p>
+        <p>{pet.name} will stay in your family album with every form, keepsake and check-in. {name.trim()} starts as a {eggs[selectedEgg].name} egg with fresh daily care and a new adventure. Your game levels and care practice carry on.</p>
         <p>You can keep caring for {pet.name} by choosing “Keep playing” below. Beginning a new generation makes the new egg your active companion.</p>
         {error && <p className="family-error" role="alert">{error}</p>}
         <button className="primary-button" disabled={saving || !validName} onClick={() => void begin()}>{saving ? 'Saving new egg…' : 'Begin next generation'}<Egg size={17}/></button>
@@ -88,7 +92,7 @@ export function FamilyAlbum({pet, now, onBegin}: {pet: Pet; now: Date; onBegin: 
       <div className="family-section-heading"><h3>Earlier companions</h3><span>{ancestors.length}</span></div>
       {ancestors.length === 0 ? <p className="family-empty">Your family starts here. Earlier companions will appear here when you begin a new generation.</p> : [...ancestors].reverse().map(ancestor => <article className="family-ancestor" key={`${ancestor.generation}-${ancestor.pet.bornAt}`}>
         <div className="family-ancestor-heading"><FamilyPortrait pet={ancestor.pet} stage={petSpriteStage(ancestor.pet)} variant={ancestor.variant} name={ancestor.pet.name}/><div><span className="family-eyebrow">GENERATION {ancestor.generation}</span><h4>{ancestor.pet.name}</h4><p>{eggs[ancestor.pet.egg].name} · {appearanceNames[ancestor.variant]}</p><small>{ancestor.pet.forms.length} forms · {Object.keys(ancestor.pet.checkins).length} check-ins</small></div></div>
-        <details><summary>View saved journey</summary><div className="family-saved-journey"><span className="family-eyebrow">HATCHED {ancestor.pet.bornDate}</span><div className="family-forms">{ancestor.pet.forms.map(form => <div key={form.stage}><FamilyPortrait pet={ancestor.pet} variant={ancestor.variant} stage={petSpriteStage(ancestor.pet, form.stage)} name={`Form ${form.stage + 1}`}/><span>{form.at}</span></div>)}</div>{Object.entries(ancestor.pet.checkins).sort(([a], [b]) => b.localeCompare(a)).map(([date, checkin]) => <div className="family-saved-checkin" key={date}><span>{date}</span><span>{checkin.items.filter(item => item.done).length} / {checkin.items.length} chores</span></div>)}{Object.keys(ancestor.pet.checkins).length === 0 && <p>No check-ins saved.</p>}</div></details>
+        <details><summary>View saved journey</summary><div className="family-saved-journey"><span className="family-eyebrow">HATCHED {ancestor.pet.bornDate}</span>{!!ancestor.pet.adventure?.items.length&&<p className="family-keepsakes">Keepsakes: {ancestor.pet.adventure.items.map(id=>keepsakes.find(item=>item.id===id)?.name??id).join(' · ')}</p>}{adventures[ancestor.pet.egg].chapters.slice(0,ancestor.pet.adventure?.chapter??0).map(chapter=><p className="family-keepsakes" key={chapter.title}><strong>{chapter.title}</strong><br/>{chapter.discovery.split(eggs[ancestor.pet.egg].name).join(ancestor.pet.name)}</p>)}<div className="family-forms">{ancestor.pet.forms.map(form => <div key={form.stage}><FamilyPortrait pet={ancestor.pet} variant={ancestor.variant} stage={petSpriteStage(ancestor.pet, form.stage)} name={`Form ${form.stage + 1}`}/><span>{form.at}</span></div>)}</div>{Object.entries(ancestor.pet.checkins).sort(([a], [b]) => b.localeCompare(a)).map(([date, checkin]) => <div className="family-saved-checkin" key={date}><span>{date}</span><span>{checkin.items.filter(item => item.done).length} / {checkin.items.length} chores</span></div>)}{Object.keys(ancestor.pet.checkins).length === 0 && <p>No check-ins saved.</p>}</div></details>
       </article>)}
     </div>
   </section>;

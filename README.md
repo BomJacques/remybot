@@ -17,12 +17,21 @@ Choose one of eight mystery eggs and give your companion a name. The first egg h
 - Read each creature’s story and care guide after it hatches. Food, chores, cuddles, and naps shape the experience.
 - Drag the creature around the LCD screen, or use arrow keys and Home to centre him. Tap to make him laugh. The Play button opens Catch the stars and Copy my moves, with separate saved levels. Star-catching grows from five to twelve stars and introduces movement; memory patterns grow up to six moves with faster cues. Each game creates fresh positions or patterns. There is no failure timer, and memory patterns can be replayed.
 - Open the Toy box for a bouncing ball and poppable bubbles. These are free-play activities with creature reactions. Games and toys never complete chores for you.
+- Each family has a five-chapter adventure. One care activity or completed game/toy round earns the first keepsake choice; subsequent chapters need both care and play, in either order. A new discovered form opens each chapter. Choose one of two pixel decorations per chapter and display any earned item on the LCD. Unfinished progress persists without daily resets, streaks or penalties. Three ball tosses or six bubbles finish a toy round; free play can continue afterward.
 - Camera view places the LCD creature over a live camera picture. Drag him around, resize him, and tap to interact. This is a 2D camera overlay, without surface tracking. Camera access starts only after tapping Start camera; no microphone, recording, photo storage, or upload is used. Closing the view or leaving the page stops the camera. Hardware camera availability and permission are required.
 - A centred handheld device, right-side chores drawer, optional sound, reduced motion, and layouts for modern iPads and phones.
 - Reset in the bottom menu asks for confirmation before clearing this browser’s companion and returning to egg selection.
-- Family album offers an optional next generation after seven local calendar days and two completed cocoons. The previous companion's full forms, check-ins and care history stay archived. Game levels, care mastery and custom chores carry forward; the new egg has fresh daily care and a small inherited pixel feature. Companions never die, and starting a new generation is never automatic.
+- Family album offers an optional next generation after seven local calendar days and two completed cocoons. Continue the same egg family or choose any other family without resetting. The previous companion's full forms, check-ins, care history and keepsakes stay archived. Game levels, care mastery and custom chores carry forward; the new egg has a fresh adventure, fresh daily care and a small inherited pixel feature. Companions never die, and starting a new generation is never automatic.
 
 Five creature silhouettes per egg family are followed by alternating fourth/fifth renewal forms with care marks. Moss, Luna, Ember, Tide, Static and Relic are joined by Nimbus and Pebble. The growth history shows discovered forms and keeps future forms hidden. Artwork advances with each completed cocoon, including after missed days, so consecutive emergences show different forms. Existing companions keep the artwork of all previously completed forms, then discover the added forms in order. Daily check-in prompts appear when the app is open; there are no background notifications.
+
+## Gameplay review
+
+The October 2026 GUI review covered first adoption, hatching, care, games, chores, bedtime, later forms and the next generation. The main gap was a reward beyond routine maintenance. The adventure loop now connects those actions to a visible choice and an ongoing family story.
+
+Benchmarks included [Tamagotchi Adventure Kingdom](https://apps.apple.com/us/app/tamagotchi-adventure-kingdom/id1614952689) (US App Store 4.8/5, about 12K ratings), [My Tamagotchi Forever](https://apps.apple.com/us/app/my-tamagotchi-forever/id1267861706) (4.6/5, about 28K), [My Talking Tom 2](https://apps.apple.com/us/app/my-talking-tom-2/id1337578317) (4.4/5, about 858K), and [Pou](https://apps.apple.com/us/app/pou/id575154654?platform=ipad) (4.4/5, about 3.9K), checked 7 October 2026. Their documented discovery, customization and collection loops informed this design; ratings are not evidence that a particular child will enjoy Remybot.
+
+A short observed playtest with ages 6–9 should check whether a child can find the next action unaided, understand the earned decoration, choose an activity while the pet is full, and decide what to return for tomorrow. No children were included in the automated or GUI audit.
 
 ## Saves and timing
 
@@ -70,6 +79,7 @@ GitHub Pages publishes the root of the gh-pages branch. The Vite base path is /r
 - app/draggable-creature.tsx: bounded touch, mouse, and keyboard movement
 - app/camera-view.tsx: optional camera overlay and placement controls
 - app/evolution-path.tsx: five-form discovery tracker with hidden future artwork
+- app/adventure.tsx and app/adventure-content.ts: next action, family story chapters and collectible LCD decorations
 - app/eggs.ts and app/lore.json: origins and unlocked stories
 - public/sprites, public/moods, public/cocoons: original LCD artwork
 - scripts/deploy-pages.mjs: publishes the static build to the gh-pages branch

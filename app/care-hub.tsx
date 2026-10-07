@@ -7,12 +7,13 @@ export type CareChoice='brush'|'wash'|'pat'|'feed'|'bedtime';
 export function CareHub({pet,now,onChoose}:{pet:Pet;now:Date;onChoose:(choice:CareChoice)=>void}){
  const progress=careProgress(pet,now);
  const sleeping=!!pet.restUntil&&Date.parse(pet.restUntil)>+now;
- const fed=pet.fedDates.includes(dateKey(now,pet.timezone));
+ const tummy=foodAt(pet,now).level;
+ const fed=pet.fedDates.includes(dateKey(now,pet.timezone))||tummy===3;
  const cards=[
   {id:'brush' as const,title:'Brush teeth',text:'Brush back and forth until they sparkle.',icon:Brush,done:progress.today.brush},
   {id:'wash' as const,title:'Wash time',text:'Scrub the soap spots, then rinse.',icon:Droplets,done:progress.today.wash},
   {id:'pat' as const,title:'Give him a pat',text:'Gentle strokes fill his affection meter.',icon:Heart,done:progress.today.pat},
-  {id:'feed' as const,title:'Feed to the beat',text:foodAt(pet,now).level===3?'His tummy is full.':'Choose a snack, then tap in rhythm.',icon:Utensils,done:fed},
+  {id:'feed' as const,title:tummy===3?'Tummy full':'Feed to the beat',text:tummy===3?'All set. Food can wait until he is hungry.':'Choose a snack, then tap in rhythm.',icon:Utensils,done:fed},
  ];
  return <div className="care-hub">
   <div className="care-level"><Sparkles size={22}/><div><strong>Care level {progress.level}</strong><span>{progress.untilNext} daily care {progress.untilNext===1?'task':'tasks'} to the next level</span></div><b>{progress.xp} XP</b></div>

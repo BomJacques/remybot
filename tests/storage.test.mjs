@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {defaults,hatchSeconds,cocoonSeconds,growth,petSpriteStage,petStageName} from '../app/engine.ts';
+import {defaults,hatchSeconds,cocoonSeconds,growth,petSpriteStage,petStageName,adventureProgress} from '../app/engine.ts';
 import {SAVE_KEY,SaveError,readSavedPet,applySavedAction,resetSavedPet} from '../app/storage.ts';
 
 const start=new Date('2026-10-04T02:00:00Z');
@@ -396,4 +396,109 @@ test('invalid family indices and visual pins cannot corrupt current or archived 
     assert.throws(()=>readSavedPet(storage),error=>error instanceof SaveError&&error.code==='invalid');
     assert.equal(storage.getItem(SAVE_KEY),original);
   }
+});
+
+test('legacy saves begin adventures with no invented progress and no read-time rewrite',()=>{
+  const old=memory();saveReadyFamily(old);
+  const value=JSON.parse(old.getItem(SAVE_KEY));delete value.pet.adventure;
+  const raw=JSON.stringify(value),storage=memory(raw);
+  const loaded=readSavedPet(storage).pet;
+  assert.equal(loaded.adventure,undefined);
+  assert.equal(storage.getItem(SAVE_KEY),raw);
+  assert.equal(adventureProgress(loaded,nextDay(3)).unlocked,true);
+  assert.equal(adventureProgress(loaded,nextDay(3)).ready,false);
+  assert.equal(adventureProgress(loaded,nextDay(3)).careDone,false);
+  assert.equal(adventureProgress(loaded,nextDay(3)).playDone,false);
+  applySavedAction(storage,{type:'care',activity:'wash'},nextDay(3));
+  assert.equal(readSavedPet(storage).pet.adventure.care,true);
+  assert.deepEqual(readSavedPet(storage).pet.gameWins,value.pet.gameWins);
+  assert.deepEqual(readSavedPet(storage).pet.forms,value.pet.forms);
+});
+
+test('adventure care, play, keepsakes and decoration survive reloads and day boundaries',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  applySavedAction(storage,{type:'care',activity:'brush'},nextDay(0));
+  assert.equal(adventureProgress(readSavedPet(storage).pet,nextDay(1)).ready,true);
+  applySavedAction(storage,{type:'keepsake',id:'leaf'},nextDay(1));
+  applySavedAction(storage,{type:'evolve'},nextDay(1));
+  applySavedAction(storage,{type:'emerge'},new Date(+nextDay(1)+60000));
+  applySavedAction(storage,{type:'toyPlay'},nextDay(2));
+  assert.deepEqual(readSavedPet(storage).pet.adventure,{chapter:1,care:false,play:true,items:['leaf'],equipped:'leaf'});
+  applySavedAction(storage,{type:'feed',food:'meal'},nextDay(3));
+  assert.equal(adventureProgress(readSavedPet(storage).pet,nextDay(3)).ready,true);
+  applySavedAction(storage,{type:'keepsake',id:'star'},nextDay(3));
+  applySavedAction(storage,{type:'decorate',id:'leaf'},nextDay(3));
+  const reloaded=readSavedPet(storage).pet;
+  assert.deepEqual(reloaded.adventure,{chapter:2,care:false,play:false,items:['leaf','star'],equipped:'leaf'});
+  assert.equal(reloaded.gameWins,undefined);
+  assert.equal(reloaded.playCount,1);
+  assert.deepEqual(reloaded.checkins,{});
+});
+
+test('repeated cross-tab claims cannot grant both choices or skip to the next chapter',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  applySavedAction(storage,{type:'toyPlay'},nextDay(0));
+  applySavedAction(storage,{type:'toyPlay'},nextDay(0));
+  assert.equal(readSavedPet(storage).pet.adventure.chapter,0);
+  applySavedAction(storage,{type:'keepsake',id:'leaf'},nextDay(0));
+  const kept=storage.getItem(SAVE_KEY);
+  for(const id of ['leaf','flower','moon'])assert.throws(()=>applySavedAction(storage,{type:'keepsake',id},nextDay(0)),/Discover the next creature form/);
+  assert.equal(storage.getItem(SAVE_KEY),kept);
+  assert.deepEqual(readSavedPet(storage).pet.adventure.items,['leaf']);
+});
+
+test('failed adventure completion, collection and decoration writes keep the previous state intact',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  const full={getItem:storage.getItem,setItem(){throw new Error('QuotaExceededError');}};
+  let before=storage.getItem(SAVE_KEY);
+  assert.throws(()=>applySavedAction(full,{type:'toyPlay'},nextDay(0)),error=>error.code==='unavailable');
+  assert.equal(storage.getItem(SAVE_KEY),before);
+  applySavedAction(storage,{type:'toyPlay'},nextDay(0));before=storage.getItem(SAVE_KEY);
+  assert.throws(()=>applySavedAction(full,{type:'keepsake',id:'leaf'},nextDay(0)),error=>error.code==='unavailable');
+  assert.equal(storage.getItem(SAVE_KEY),before);
+  applySavedAction(storage,{type:'keepsake',id:'leaf'},nextDay(0));before=storage.getItem(SAVE_KEY);
+  assert.throws(()=>applySavedAction(full,{type:'decorate',id:null},nextDay(0)),error=>error.code==='unavailable');
+  assert.equal(storage.getItem(SAVE_KEY),before);
+});
+
+test('new-family lineage persists the full parent adventure while the child has no old flags or items',()=>{
+  const storage=memory(),parent=saveReadyFamily(storage);
+  applySavedAction(storage,{type:'keepsake',id:'flower'},nextDay(3));
+  applySavedAction(storage,{type:'toyPlay'},nextDay(3));
+  const oldAdventure=readSavedPet(storage).pet.adventure;
+  applySavedAction(storage,{type:'lineage',egg:6,name:'Nimbus junior',expectedBornAt:parent.bornAt},nextDay(7));
+  const child=readSavedPet(storage).pet;
+  assert.equal(child.egg,6);assert.equal(child.lineage.ancestors[0].pet.egg,0);
+  assert.deepEqual(child.lineage.ancestors[0].pet.adventure,oldAdventure);
+  assert.equal(child.adventure,undefined);
+  assert.equal(adventureProgress(child,nextDay(8)).ready,false);
+  assert.deepEqual(adventureProgress(child,nextDay(8)).items,[]);
+  assert.deepEqual(child.gameWins,parent.gameWins);
+  assert.equal(child.playCount,parent.playCount+1);
+});
+
+test('malformed adventure inventories and incompatible chapter flags are rejected without data loss',()=>{
+  const good=memory();applySavedAction(good,adopt,start);
+  applySavedAction(good,{type:'toyPlay'},nextDay(0));
+  applySavedAction(good,{type:'keepsake',id:'leaf'},nextDay(0));
+  for(const mutate of [
+    p=>{p.adventure.chapter=-1;},p=>{p.adventure.chapter=6;},p=>{p.adventure.chapter=0.5;},
+    p=>{p.adventure.items=[];},p=>{p.adventure.items=['unknown'];},p=>{p.adventure.items=['moon'];},
+    p=>{p.adventure.items=['leaf','leaf'];p.adventure.chapter=2;},
+    p=>{p.adventure.equipped='flower';},p=>{p.adventure.care='true';},
+    p=>{p.adventure.care=true;},p=>{p.adventure.play=true;},p=>{p.adventure.extra='unexpected';},
+  ]) {
+    const value=JSON.parse(good.getItem(SAVE_KEY));mutate(value.pet);
+    const original=JSON.stringify(value),storage=memory(original);
+    assert.throws(()=>readSavedPet(storage),error=>error instanceof SaveError&&error.code==='invalid');
+    assert.equal(storage.getItem(SAVE_KEY),original);
+  }
+  const family=memory(),parent=saveReadyFamily(family);
+  applySavedAction(family,{type:'keepsake',id:'flower'},nextDay(3));
+  applySavedAction(family,{type:'lineage',egg:7,name:'Pebble junior',expectedBornAt:parent.bornAt},nextDay(7));
+  const packet=JSON.parse(family.getItem(SAVE_KEY));
+  packet.pet.lineage.ancestors[0].pet.adventure.items=['beacon'];
+  const original=JSON.stringify(packet),storage=memory(original);
+  assert.throws(()=>readSavedPet(storage),error=>error instanceof SaveError&&error.code==='invalid');
+  assert.equal(storage.getItem(SAVE_KEY),original);
 });
