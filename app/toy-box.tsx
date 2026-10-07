@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect, useRef, useState, type CSSProperties} from 'react';
+import {CreatureAppearance} from './creature-appearance';
 import './toy-box.css';
 
 type Toy = 'ball' | 'bubbles';
@@ -8,9 +9,10 @@ type Reaction = 'hop' | 'laugh' | null;
 const BUBBLES = [0, 1, 2, 3, 4, 5];
 const LAUGHS = ['Hee hee!', 'Ha! That tickles!', 'Again!'];
 
-export function ToyBox({name, spriteSrc, onReact}: {
+export function ToyBox({name, spriteSrc, appearance, onReact}: {
   name: string;
   spriteSrc: string;
+  appearance?: {egg: number; stage: number; variant: number};
   onReact: () => void;
 }) {
   const [toy, setToy] = useState<Toy>('ball');
@@ -114,7 +116,7 @@ export function ToyBox({name, spriteSrc, onReact}: {
 
       <div className="toy-pet-position">
         <button type="button" className="toy-pet" onClick={tickle} aria-label={`Tickle ${name}`}>
-          <img key={reactionId} src={spriteSrc} alt="" draggable={false} className={reaction ? `toy-pet-${reaction}` : ''} />
+          <CreatureAppearance key={reactionId} egg={appearance?.egg ?? 0} stage={appearance?.stage ?? 1} variant={appearance?.variant} className={`toy-pet-appearance ${reaction ? `toy-pet-${reaction}` : ''}`}><img src={spriteSrc} alt="" draggable={false}/></CreatureAppearance>
           {reaction === 'laugh' && <span key={`laugh-${reactionId}`} className="toy-giggle" aria-hidden="true">HA!</span>}
         </button>
         <span className="toy-pet-shadow" aria-hidden="true" />

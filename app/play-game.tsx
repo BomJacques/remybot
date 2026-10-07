@@ -3,11 +3,13 @@
 import {useEffect, useRef, useState, type CSSProperties} from 'react';
 import {ArrowLeft, ArrowUp, Hand, RotateCw} from 'lucide-react';
 import {checkMove, createMovePattern, createStarPlaces, gameLevel, MAX_LEVELS, moveRules, starRules, type Game, type Move} from './game-rules';
+import {CreatureAppearance} from './creature-appearance';
 import './play-game.css';
 
 export type PlayGameProps = {
   name: string;
   spriteSrc: string;
+  appearance?: {egg: number; stage: number; variant: number};
   gameWins?: {stars: number; moves: number};
   onComplete: (game: Game) => Promise<boolean>;
   onReact: () => void;
@@ -29,7 +31,7 @@ function PixelStar({filled = true}: {filled?: boolean}) {
   return <svg viewBox="0 0 16 16" aria-hidden="true" className="play-pixel-star"><path d="M7 1h2v4h2v1h4v3h-3v2h1v4h-3v-2H6v2H3v-4h1V9H1V6h4V5h2z" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={filled ? 0 : 1}/></svg>;
 }
 
-export function PlayGame({name, spriteSrc, gameWins = {stars: 0, moves: 0}, onComplete, onReact}: PlayGameProps) {
+export function PlayGame({name, spriteSrc, appearance, gameWins = {stars: 0, moves: 0}, onComplete, onReact}: PlayGameProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [caught, setCaught] = useState(0);
   const [cooling, setCooling] = useState(false);
@@ -189,7 +191,7 @@ export function PlayGame({name, spriteSrc, gameWins = {stars: 0, moves: 0}, onCo
   }
 
   if (!session) return <div className="play-game">
-    <div className="play-chooser-mascot" aria-hidden="true"><img src={spriteSrc} alt="" draggable={false}/><span>LET’S PLAY</span></div>
+    <div className="play-chooser-mascot" aria-hidden="true"><CreatureAppearance egg={appearance?.egg ?? 0} stage={appearance?.stage ?? 1} variant={appearance?.variant} className="play-chooser-sprite"><img src={spriteSrc} alt="" draggable={false}/></CreatureAppearance><span>LET’S PLAY</span></div>
     <div className="play-choices">
       <button ref={firstChoice} className="play-choice" onClick={() => startGame('stars')}><PixelStar/><span><strong>Catch the stars <em>Level {gameLevel('stars', gameWins.stars)}</em></strong><small>Find {starRules(gameWins.stars).goal} stars for {name}.{starRules(gameWins.stars).drift ? ' Now they drift!' : ' Take your time.'}</small></span><span aria-hidden="true">→</span></button>
       <button className="play-choice" onClick={() => startGame('moves')}><Hand/><span><strong>Copy my moves <em>Level {gameLevel('moves', gameWins.moves)}</em></strong><small>Hop, spin and wave. Patterns of up to {Math.max(...moveRules(gameWins.moves).lengths)} moves.</small></span><span aria-hidden="true">→</span></button>
@@ -224,7 +226,7 @@ export function PlayGame({name, spriteSrc, gameWins = {stars: 0, moves: 0}, onCo
         {shownMove ? <><MoveIcon move={shownMove}/><strong>{moveNames[shownMove]}!</strong></> : <span>{complete ? 'You got them all!' : phase === 'watching' ? 'Watch…' : phase === 'playing' ? 'Your turn' : phase === 'roundDone' ? 'You got it!' : `${session.patterns[round].length} move${session.patterns[round].length === 1 ? '' : 's'} to copy`}</span>}
       </div>}
       {game === 'stars' && complete && <div className="play-finish-banner"><PixelStar/><span>{goal} stars!</span><PixelStar/></div>}
-      <img key={reactionId} className={`play-mascot ${reactionId ? `play-reaction-${reaction}` : ''}`} src={spriteSrc} alt={`${name} is playing`} draggable={false}/>
+      <CreatureAppearance key={reactionId} egg={appearance?.egg ?? 0} stage={appearance?.stage ?? 1} variant={appearance?.variant} className={`play-mascot ${reactionId ? `play-reaction-${reaction}` : ''}`}><img src={spriteSrc} alt={`${name} is playing`} draggable={false}/></CreatureAppearance>
       <div className="play-floor" aria-hidden="true"/>
     </div>
     <div className="play-instructions" role="status" aria-atomic="true">

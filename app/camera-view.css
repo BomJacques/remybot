@@ -4,11 +4,11 @@
 .camera-view__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;background:#263528}
 .camera-view__badge{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:6px;border-radius:6px;background:#f8f7e4ef;padding:5px 8px;color:#34442a;font:11px var(--mono);letter-spacing:.6px}
 .camera-view__invitation{position:absolute;top:56px;left:16px;right:16px;text-align:center;color:#3f522d;font:13px var(--mono);line-height:1.5}
-.camera-view__pet,.camera-view .camera-view__pet:active{position:absolute;z-index:2;transform:translate(-50%,-50%);padding:0;border:0;background:transparent;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;transition:none}
+.camera-view__pet,.camera-view .camera-view__pet:active{position:absolute;z-index:2;display:grid;place-items:center;transform:translate(-50%,-50%);padding:0;border:0;background:transparent;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;transition:none}
 .camera-view .camera-view__pet:active{cursor:grabbing}
 .camera-view__pet:focus-visible{outline:3px solid #fffef4;outline-offset:2px;border-radius:14px;box-shadow:0 0 0 5px #3e5030}
-.camera-view__pet img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 7px 2px #24382645);pointer-events:none}
-.camera-view__pet--laughing img{animation:camera-giggle .18s steps(2,end) 6}
+.camera-view__appearance{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 7px 2px #24382645);pointer-events:none}
+.camera-view__pet--laughing .camera-view__appearance{animation:camera-giggle .18s steps(2,end) 6}
 .camera-view__giggle{position:absolute;top:-12px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#f9f9d8;color:#354726;border:2px solid #50633c;box-shadow:3px 3px 0 #50633c;border-radius:4px;padding:4px 7px;font:bold 12px var(--mono);pointer-events:none}
 .camera-view__ground{position:absolute;left:16px;right:16px;bottom:27px;border-top:1px dashed #596b3460;z-index:-1}
 .camera-view__stage--live .camera-view__ground{display:none}
@@ -25,4 +25,4 @@
 .camera-view .camera-view__resume:active{transform:translateX(-50%)}
 @keyframes camera-giggle{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(7deg) translateY(-7px)}}
 @media(max-width:440px){.camera-view__adjustments{gap:8px}.camera-view__adjustments label{gap:7px;font-size:12px}.camera-view__adjustments button span{display:none}.camera-view__hint{font-size:12px}.camera-view__stage{height:clamp(230px,36dvh,330px)}}
-@media(prefers-reduced-motion:reduce){.camera-view__pet--laughing img{animation:none}}
+@media(prefers-reduced-motion:reduce){.camera-view__pet--laughing .camera-view__appearance{animation:none}}

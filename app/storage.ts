@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {transition, type Action, type Pet} from './engine.ts';
+import {transition, dateKey, variantForGeneration, type Action, type Pet, type CompanionSnapshot} from './engine.ts';
 
 export const SAVE_KEY = 'remybot.pet.v1';
 export const SAVE_LOCK = 'remybot.pet.write';
@@ -26,7 +26,7 @@ const commitment = z.object({
   id:z.string().min(1).max(64), label:z.string().min(1).max(90).refine(value=>!!value.trim()), kind,
 }).strict();
 const commitments = z.array(commitment).min(1).max(6).refine(items=>new Set(items.map(item=>item.id)).size===items.length);
-const petSchema = z.object({
+const companionSchema = z.object({
   egg:z.number().int().min(0).max(5),
   name:z.string().min(1).max(24).refine(value=>!!value.trim()),
   bornDate:calendarDate, bornAt:timestamp, hatchStorySeen:z.boolean().optional(),
@@ -40,15 +40,29 @@ const petSchema = z.object({
   pettedDate:calendarDate.nullable(), fedDates:z.array(calendarDate),
   playCount:z.number().int().nonnegative().safe().optional(), lastPlayedAt:timestamp.optional(),
   gameWins:z.object({stars:z.number().int().nonnegative().safe(),moves:z.number().int().nonnegative().safe()}).strict().optional(),
+  care:z.object({xp:z.number().int().nonnegative().safe(),completed:z.object({brush:calendarDate.optional(),wash:calendarDate.optional(),pat:calendarDate.optional()}).strict(),lastCompletedAt:timestamp}).strict().optional(),
   revealedStage:stage, highestStage:stage,
   cocoon:z.object({startedAt:timestamp, endsAt:timestamp, targetStage:stage, trait:kind}).strict().nullable().optional(),
   restUntil:timestamp.nullable().optional(), restedAt:timestamp.optional(),
+  restMode:z.enum(['nap','bedtime']).optional(), lastBedtimeAt:timestamp.optional(),
   forms:z.array(z.object({stage,trait:kind,at:calendarDate}).strict()).min(1),
-}).strict().refine(pet=>pet.highestStage>=pet.revealedStage && pet.forms[0]?.stage===0 &&
+}).strict();
+function lastCareDate(pet:CompanionSnapshot){try{return pet.care?dateKey(new Date(pet.care.lastCompletedAt),pet.timezone):'';}catch{return '';}}
+function validCompanion(pet:CompanionSnapshot){return pet.highestStage>=pet.revealedStage && pet.forms[0]?.stage===0 &&
   (!pet.gameWins || pet.gameWins.stars+pet.gameWins.moves<=(pet.playCount??0)) &&
+  (!pet.care || (pet.care.xp>=Object.keys(pet.care.completed).length && Object.values(pet.care.completed).every(day=>typeof day==='string'&&day>=pet.bornDate&&day<=lastCareDate(pet)))) &&
+  (!pet.restMode || !!pet.restUntil) &&
+  (pet.restMode!=='bedtime' || (!!pet.lastBedtimeAt && Date.parse(pet.restUntil!)-Date.parse(pet.lastBedtimeAt)===8*3600000)) &&
   pet.forms.at(-1)?.stage===pet.revealedStage && pet.forms.every((form,index)=>index===0||form.stage>pet.forms[index-1].stage) &&
   (!pet.cocoon || (pet.cocoon.targetStage>pet.revealedStage && pet.cocoon.targetStage<=pet.highestStage &&
-    Date.parse(pet.cocoon.endsAt)-Date.parse(pet.cocoon.startedAt)===60000)));
+    Date.parse(pet.cocoon.endsAt)-Date.parse(pet.cocoon.startedAt)===60000));}
+const ancestorSchema=z.object({generation:z.number().int().positive().safe(),variant:z.number().int().min(0).max(3),archivedAt:timestamp,pet:companionSchema.refine(validCompanion)}).strict();
+const petSchema=companionSchema.extend({lineage:z.object({generation:z.number().int().min(2).safe(),variant:z.number().int().min(1).max(3),ancestors:z.array(ancestorSchema).min(1)}).strict().optional()}).strict().refine(validCompanion).refine(pet=>!pet.lineage || (
+  pet.lineage.ancestors.length===pet.lineage.generation-1 && pet.lineage.variant===variantForGeneration(pet.lineage.generation) &&
+  pet.lineage.ancestors.every((ancestor,index)=>ancestor.generation===index+1 && ancestor.variant===variantForGeneration(ancestor.generation) &&
+    Date.parse(ancestor.archivedAt)>=Date.parse(ancestor.pet.bornAt) &&
+    Date.parse(ancestor.archivedAt)<=Date.parse(pet.lineage!.ancestors[index+1]?.pet.bornAt??pet.bornAt))
+));
 const saveSchema = z.object({version:z.literal(1), revision:z.number().int().positive().safe(), savedAt:timestamp, pet:petSchema.nullable()}).strict();
 
 function readRaw(storage:SaveStorage) {

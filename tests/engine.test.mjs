@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {inflateSync} from 'node:zlib';
-import {transition, defaults, EVOLUTION_DAYS, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait, spriteStage, petSpriteStage} from '../app/engine.ts';
+import {transition, defaults, EVOLUTION_DAYS, hatchSeconds, cocoonSeconds, moodOf, dateKey, daysBetween, growth, foodAt, foodValue, preferences, careTrait, spriteStage, petSpriteStage, careProgress, lineageStatus, generationOf, variantOf} from '../app/engine.ts';
 
 const d=s=>new Date(s);
 const base=d('2026-10-04T02:00:00Z');
@@ -150,3 +150,141 @@ test('all six eggs have visibly distinct evolution silhouettes in every expressi
   }
 });
 
+
+test('hands-on care awards mastery once per activity per local day and never completes chores',()=>{
+  const original=adopt();const now=at(original,1);
+  let p=original;
+  for(const activity of ['brush','wash','pat']) {
+    p=transition(p,{type:'care',activity},now);
+    p=transition(p,{type:'care',activity},now);
+  }
+  assert.deepEqual(careProgress(p,now),{xp:3,level:1,progress:60,untilNext:2,today:{brush:true,wash:true,pat:true}});
+  assert.equal(p.pettedDate,p.bornDate);
+  assert.deepEqual(p.checkins,original.checkins);
+  assert.deepEqual(p.food,original.food);
+  assert.equal(original.care,undefined,'care must not mutate an earlier save');
+  assert.throws(()=>transition(p,{type:'care',activity:'unknown'},new Date(+now+1)),/Choose brushing/);
+});
+
+test('care follows local midnight including DST and does not farm XP under a backward clock',()=>{
+  let p=adopt(0,d('2026-03-08T05:00:00Z'),'America/New_York');
+  p=transition(p,{type:'care',activity:'wash'},d('2026-03-09T03:59:59Z'));
+  assert.equal(p.care.completed.wash,'2026-03-08');
+  p=transition(p,{type:'care',activity:'wash'},d('2026-03-09T04:00:00Z'));
+  assert.equal(p.care.completed.wash,'2026-03-09');
+  assert.equal(p.care.xp,2);
+  assert.throws(()=>transition(p,{type:'care',activity:'wash'},d('2026-03-09T03:59:59Z')),/clock is earlier/);
+  assert.equal(transition(p,{type:'care',activity:'wash'},d('2026-03-09T05:00:00Z')).care.xp,2);
+});
+
+test('mastery levels advance every five daily care completions and cannot overflow',()=>{
+  let p=adopt();
+  for(let day=0;day<2;day++)for(const activity of ['brush','wash','pat'])p=transition(p,{type:'care',activity},at(p,day*24*H));
+  assert.equal(careProgress(p,at(p,24*H)).level,2);
+  assert.equal(careProgress(p,at(p,24*H)).progress,20);
+  const full={...p,care:{...p.care,xp:Number.MAX_SAFE_INTEGER}};
+  assert.throws(()=>transition(full,{type:'care',activity:'brush'},at(p,2*24*H)),/care counter is full/);
+});
+
+test('hands-on care and bedtime wait for hatching, cocoon emergence and waking',()=>{
+  const p=adopt();
+  for(const action of [{type:'care',activity:'brush'},{type:'care',activity:'wash'},{type:'care',activity:'pat'},{type:'bedtime'}]) {
+    assert.throws(()=>transition(p,action,base),/still getting ready/);
+    assert.throws(()=>transition(transition(p,{type:'evolve'},at(p,24*H)),action,at(p,24*H)),/cocoon/);
+    assert.throws(()=>transition(transition(p,{type:'bedtime'},at(p,1)),action,at(p,2)),/napping/);
+  }
+});
+
+test('bedtime lasts eight real hours, survives reload and wake ends it early',()=>{
+  const original=adopt(0,d('2026-11-01T04:00:00Z'),'America/New_York');const now=at(original,1);
+  const asleep=JSON.parse(JSON.stringify(transition(original,{type:'bedtime'},now)));
+  assert.equal(asleep.restMode,'bedtime');
+  assert.equal(asleep.lastBedtimeAt,now.toISOString());
+  assert.equal(Date.parse(asleep.restUntil)-(+now),8*H);
+  assert.equal(moodOf(asleep,new Date(+now+8*H-1)),'sleeping');
+  assert.notEqual(moodOf(asleep,new Date(+now+8*H)),'sleeping');
+  for(const action of [{type:'feed',food:'meal'},{type:'pet'},{type:'play'},{type:'nap'},{type:'evolve'}])assert.throws(()=>transition(asleep,action,new Date(+now+1)),/napping/);
+  const awake=transition(asleep,{type:'wake'},new Date(+now+1000));
+  assert.equal(awake.restUntil,null);
+  assert.equal(awake.restMode,undefined);
+  assert.equal(awake.restedAt,new Date(+now+1000).toISOString());
+  assert.deepEqual(awake.checkins,original.checkins);
+  const nap=transition(awake,{type:'nap'},new Date(+now+2000));
+  assert.equal(nap.restMode,'nap');
+  assert.equal(Date.parse(nap.restUntil)-(+now+2000),20*60000);
+});
+
+function readyForLineage(p){return evolve(evolve(p,at(p,24*H)),at(p,2*24*H));}
+
+test('lineage requires seven local days and two actual completed cocoons',()=>{
+  const original=adopt();
+  assert.deepEqual(lineageStatus(original,at(original,7*24*H)),{eligible:false,daysRemaining:0,evolutionsRemaining:2,generation:1});
+  const caughtUp=evolve(original,at(original,27*24*H));
+  assert.equal(caughtUp.revealedStage,27);
+  assert.equal(lineageStatus(caughtUp,at(original,28*24*H)).evolutionsRemaining,1,'calendar catch-up is still one cocoon');
+  const p=readyForLineage(original);
+  assert.equal(lineageStatus(p,d('2026-10-10T13:59:59Z')).eligible,false);
+  assert.equal(lineageStatus(p,d('2026-10-10T14:00:00Z')).eligible,true);
+  const asleep=transition(p,{type:'bedtime'},at(p,7*24*H));
+  assert.equal(lineageStatus(asleep,at(p,7*24*H)).eligible,false);
+  assert.throws(()=>transition(original,{type:'lineage',name:'Remy II',expectedBornAt:original.bornAt},at(original,7*24*H)),/7 days/);
+});
+
+test('a voluntary new generation retains its parent in full and carries player mastery',()=>{
+  let p=adopt(4);
+  p=transition(p,{type:'checkin',done:['bed']},at(p,0));
+  p=transition(p,{type:'play',game:'stars'},at(p,1));
+  p=transition(p,{type:'care',activity:'brush'},at(p,2));
+  p=readyForLineage(p);
+  const before=JSON.stringify(p),now=at(p,7*24*H);
+  const child=transition(p,{type:'lineage',name:'  Remy II  ',expectedBornAt:p.bornAt},now);
+  assert.equal(JSON.stringify(p),before);
+  assert.equal(child.name,'Remy II');
+  assert.equal(child.egg,p.egg);
+  assert.equal(generationOf(child),2);
+  assert.equal(variantOf(child),1);
+  assert.equal(hatchSeconds(child,now),60);
+  assert.equal(child.forms.length,1);
+  assert.equal(child.revealedStage,0);
+  assert.equal(child.highestStage,0);
+  assert.deepEqual(child.checkins,{});
+  assert.deepEqual(child.fedDates,[]);
+  assert.equal(child.pettedDate,null);
+  assert.equal(child.food.level,3);
+  assert.deepEqual(child.commitments,p.commitments);
+  assert.deepEqual(child.gameWins,p.gameWins);
+  assert.equal(child.playCount,p.playCount);
+  assert.deepEqual(child.care,{xp:1,completed:{},lastCompletedAt:now.toISOString()});
+  const ancestor=child.lineage.ancestors[0];
+  assert.equal(ancestor.pet.name,p.name);
+  assert.deepEqual(ancestor.pet.forms,p.forms);
+  assert.deepEqual(ancestor.pet.checkins,p.checkins);
+  assert.deepEqual(ancestor.pet.care,p.care);
+  assert.equal(ancestor.pet.lineage,undefined);
+  assert.equal(ancestor.archivedAt,now.toISOString());
+});
+
+test('lineage variants change between generations without recursively duplicating family records',()=>{
+  let p=adopt();
+  const expected=[0,1,2,3,1,2];
+  for(let generation=1;generation<=expected.length;generation++) {
+    assert.equal(generationOf(p),generation);
+    assert.equal(variantOf(p),expected[generation-1]);
+    if(generation===expected.length)break;
+    p=readyForLineage(p);
+    p=transition(p,{type:'lineage',name:`Remy ${generation+1}`,expectedBornAt:p.bornAt},at(p,7*24*H));
+    assert.equal(p.lineage.ancestors.length,generation);
+    for(const [index,ancestor] of p.lineage.ancestors.entries()) {
+      assert.equal(ancestor.generation,index+1);
+      assert.equal(ancestor.variant,expected[index]);
+      assert.equal(ancestor.pet.lineage,undefined);
+    }
+    p=JSON.parse(JSON.stringify(p));
+  }
+});
+
+test('stale lineage confirmations and invalid names cannot replace a companion',()=>{
+  const p=readyForLineage(adopt()),now=at(p,7*24*H);
+  assert.throws(()=>transition(p,{type:'lineage',name:'Remy II',expectedBornAt:'another pet'},now),/companion changed/);
+  for(const name of ['', ' ', 'a'.repeat(25)])assert.throws(()=>transition(p,{type:'lineage',name,expectedBornAt:p.bornAt},now),/name between/);
+});

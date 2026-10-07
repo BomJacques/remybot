@@ -9,7 +9,7 @@
 .toy-floor{position:absolute;bottom:32px;left:9%;right:9%;height:2px;background:repeating-linear-gradient(90deg,#758955 0 5px,transparent 5px 11px);z-index:-1}
 .toy-pet-position{position:absolute;bottom:32px;left:50%;width:120px;height:120px;transform:translateX(-50%)}
 .toy-pet{position:relative;width:120px;height:120px;padding:0;border:0;background:transparent;border-radius:12px;display:grid;place-items:center;touch-action:manipulation}
-.toy-pet img{width:120px;height:120px;object-fit:contain;image-rendering:pixelated;mix-blend-mode:multiply;user-select:none;-webkit-user-drag:none}
+.toy-pet-appearance{width:120px;height:120px;object-fit:contain;image-rendering:pixelated;mix-blend-mode:multiply;user-select:none;-webkit-user-drag:none}
 .toy-pet-shadow{display:block;position:absolute;left:28px;right:28px;bottom:0;height:7px;background:#617b3b2b;border-radius:50%;pointer-events:none;z-index:-1}
 .toy-pet-hop{animation:toy-hop .85s steps(6,end)}
 .toy-pet-laugh{animation:toy-laugh .7s steps(6,end)}
@@ -40,5 +40,5 @@
 @keyframes toy-laugh{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-8deg) scale(1.06,.94)}40%,80%{transform:rotate(8deg) scale(.96,1.04)}}
 @keyframes toy-giggle{0%{opacity:0;translate:0 8px}20%,70%{opacity:1}100%{opacity:0;translate:0 -12px}}
 @keyframes toy-pop{0%{transform:scale(.7);opacity:1}50%{transform:scale(1.2);opacity:1}100%{transform:scale(1.5);opacity:0}}
-@media(max-width:380px){.toy-picker{gap:6px}.toy-picker button{font-size:11px;gap:5px}.toy-scene{height:305px}.toy-bubble-grid{left:7px;right:7px;gap:7px}.toy-bubble{width:56px;min-width:56px;height:56px}.toy-pet,.toy-pet img,.toy-pet-position{width:108px;height:108px}}
+@media(max-width:380px){.toy-picker{gap:6px}.toy-picker button{font-size:11px;gap:5px}.toy-scene{height:305px}.toy-bubble-grid{left:7px;right:7px;gap:7px}.toy-bubble{width:56px;min-width:56px;height:56px}.toy-pet,.toy-pet-appearance,.toy-pet-position{width:108px;height:108px}}
 @media(prefers-reduced-motion:reduce){.toy-box *, .toy-box *:before,.toy-box *:after{animation:none!important;transition:none!important}.toy-bubble.is-popped span{opacity:.45;font-size:24px}.toy-giggle{opacity:1}}

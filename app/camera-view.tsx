@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState, type PointerEvent, type KeyboardEvent} from 'react';
 import {Camera, CameraOff, Move, RotateCcw} from 'lucide-react';
 import {createCameraSession, type CameraStatus} from './camera-session';
+import {CreatureAppearance} from './creature-appearance';
 import './camera-view.css';
 
 function cameraError(error: unknown) {
@@ -19,9 +20,10 @@ function cameraError(error: unknown) {
   return 'The camera could not start. You can try again, or move and tap your friend here.';
 }
 
-export function CameraView({name, spriteSrc, onLaugh}: {
+export function CameraView({name, spriteSrc, appearance, onLaugh}: {
   name: string;
   spriteSrc: string;
+  appearance?: {egg: number; stage: number; variant: number};
   onLaugh: () => void;
 }) {
   const [status, setStatus] = useState<CameraStatus>('idle');
@@ -150,7 +152,7 @@ export function CameraView({name, spriteSrc, onLaugh}: {
         onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={() => {drag.current = null;}}
         onLostPointerCapture={() => {drag.current = null;}} onKeyDown={moveWithKeys} onClick={event => {if (event.detail === 0) laugh();}}
         aria-label={`Make ${name} laugh. Drag or use arrow keys to move him.`}>
-        <img src={spriteSrc} alt="" draggable={false}/>
+        <CreatureAppearance egg={appearance?.egg ?? 0} stage={appearance?.stage ?? 1} variant={appearance?.variant} className="camera-view__appearance"><img src={spriteSrc} alt="" draggable={false}/></CreatureAppearance>
         {laughing && <span className="camera-view__giggle" aria-hidden="true">HEE HEE!</span>}
       </button>
       <span className="camera-view__ground" aria-hidden="true"/>

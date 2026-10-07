@@ -223,3 +223,98 @@ test('failed or invalid game completions cannot advance a saved level',()=>{
     assert.throws(()=>readSavedPet(saved),SaveError);
   }
 });
+
+test('old saves gain daily care without a migration write and cross-tab repeats do not duplicate mastery',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  const old=storage.getItem(SAVE_KEY);
+  assert.equal(readSavedPet(storage).pet.care,undefined);
+  assert.equal(storage.getItem(SAVE_KEY),old);
+  applySavedAction(storage,{type:'care',activity:'brush'},nextDay(0));
+  applySavedAction(storage,{type:'care',activity:'brush'},nextDay(0));
+  applySavedAction(storage,{type:'care',activity:'wash'},nextDay(0));
+  const reloaded=readSavedPet(storage).pet;
+  assert.equal(reloaded.care.xp,2);
+  assert.deepEqual(reloaded.care.completed,{brush:'2026-10-04',wash:'2026-10-04'});
+  assert.deepEqual(reloaded.checkins,{});
+  assert.equal(reloaded.food.level,3);
+  applySavedAction(storage,{type:'care',activity:'wash'},nextDay(1));
+  assert.equal(readSavedPet(storage).pet.care.xp,3);
+});
+
+test('failed care and bedtime writes preserve the previous save',()=>{
+  const storage=memory();applySavedAction(storage,adopt,start);
+  const before=storage.getItem(SAVE_KEY);
+  const full={getItem:storage.getItem,setItem(){throw new Error('QuotaExceededError');}};
+  for(const action of [{type:'care',activity:'wash'},{type:'bedtime'}]) {
+    assert.throws(()=>applySavedAction(full,action,nextDay(0)),error=>error.code==='unavailable');
+    assert.equal(storage.getItem(SAVE_KEY),before);
+  }
+  applySavedAction(storage,{type:'bedtime'},nextDay(0));
+  const sleeping=readSavedPet(storage).pet;
+  assert.equal(sleeping.restMode,'bedtime');
+  assert.equal(Date.parse(sleeping.restUntil)-(+nextDay(0)),8*3600000);
+  applySavedAction(storage,{type:'wake'},new Date(+nextDay(0)+1000));
+  assert.equal(readSavedPet(storage).pet.restMode,undefined);
+});
+
+function saveReadyFamily(storage) {
+  applySavedAction(storage,adopt,start);
+  applySavedAction(storage,{type:'care',activity:'pat'},nextDay(0));
+  applySavedAction(storage,{type:'play',game:'moves'},nextDay(0));
+  for(const day of [1,2]) {
+    applySavedAction(storage,{type:'evolve'},nextDay(day));
+    applySavedAction(storage,{type:'emerge'},new Date(+nextDay(day)+60000));
+  }
+  return readSavedPet(storage).pet;
+}
+
+test('lineage archive, inherited mastery and the fresh egg all survive storage reload',()=>{
+  const storage=memory(),parent=saveReadyFamily(storage);
+  applySavedAction(storage,{type:'lineage',name:'Remy II',expectedBornAt:parent.bornAt},nextDay(7));
+  const child=readSavedPet(storage).pet;
+  assert.equal(child.lineage.generation,2);
+  assert.equal(child.lineage.variant,1);
+  assert.equal(child.lineage.ancestors.length,1);
+  assert.deepEqual(child.lineage.ancestors[0].pet.forms,parent.forms);
+  assert.equal(child.lineage.ancestors[0].pet.care.xp,1);
+  assert.equal(child.lineage.ancestors[0].pet.gameWins.moves,1);
+  assert.equal(child.gameWins.moves,1);
+  assert.equal(child.care.xp,1);
+  assert.deepEqual(child.care.completed,{});
+  assert.equal(hatchSeconds(child,nextDay(7)),60);
+  const raw=storage.getItem(SAVE_KEY);
+  readSavedPet(storage);
+  assert.equal(storage.getItem(SAVE_KEY),raw,'reading the album must not alter the saved family');
+});
+
+test('failed lineage saves and stale confirmations cannot remove or archive a different pet',()=>{
+  const storage=memory(),parent=saveReadyFamily(storage);
+  const before=storage.getItem(SAVE_KEY),action={type:'lineage',name:'Remy II',expectedBornAt:parent.bornAt};
+  const full={getItem:storage.getItem,setItem(){throw new Error('QuotaExceededError');}};
+  assert.throws(()=>applySavedAction(full,action,nextDay(7)),error=>error.code==='unavailable');
+  assert.equal(storage.getItem(SAVE_KEY),before);
+  applySavedAction(storage,action,nextDay(7));
+  const after=storage.getItem(SAVE_KEY);
+  assert.throws(()=>applySavedAction(storage,action,nextDay(8)),/companion changed/);
+  assert.equal(storage.getItem(SAVE_KEY),after);
+});
+
+test('malformed care, bedtime and ancestral snapshots are rejected without changing stored history',()=>{
+  const good=memory(),parent=saveReadyFamily(good);
+  applySavedAction(good,{type:'lineage',name:'Remy II',expectedBornAt:parent.bornAt},nextDay(7));
+  for(const mutate of [
+    p=>{p.care.xp=-1;},p=>{p.care.xp=0.5;},p=>{p.care.completed.wash='2026-02-30';},
+    p=>{p.care.completed.wash='2026-10-20';},p=>{p.care.completed.feed='2026-10-11';},
+    p=>{p.care.lastCompletedAt='yesterday';},p=>{p.timezone='broken';p.care.completed.wash='2026-10-11';},
+    p=>{p.restMode='bedtime';p.restUntil=nextDay(8).toISOString();},
+    p=>{p.lineage.generation=3;},p=>{p.lineage.variant=0;},p=>{p.lineage.ancestors=[];},
+    p=>{p.lineage.ancestors[0].pet.forms=[];},p=>{p.lineage.ancestors[0].generation=9;},
+    p=>{p.lineage.ancestors[0].pet.lineage={generation:1,variant:0,ancestors:[]};},
+    p=>{p.lineage.ancestors[0].archivedAt=start.toISOString();},
+  ]) {
+    const value=JSON.parse(good.getItem(SAVE_KEY));mutate(value.pet);
+    const original=JSON.stringify(value),storage=memory(original);
+    assert.throws(()=>readSavedPet(storage),error=>error instanceof SaveError&&error.code==='invalid');
+    assert.equal(storage.getItem(SAVE_KEY),original);
+  }
+});
