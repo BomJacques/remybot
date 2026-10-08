@@ -17,8 +17,10 @@ Choose one of eight mystery eggs and give your companion a name. The first egg h
 - Read each creature’s story and care guide after it hatches. Food, chores, cuddles, and naps shape the experience.
 - Drag the creature around the LCD screen, or use arrow keys and Home to centre him. Tap to make him laugh. The Play button opens Catch the stars and Copy my moves, with separate saved levels. Star-catching grows from five to twelve stars and introduces movement; memory patterns grow up to six moves with faster cues. Each game creates fresh positions or patterns. There is no failure timer, and memory patterns can be replayed.
 - Open the Toy box for a bouncing ball and poppable bubbles. These are free-play activities with creature reactions. Games and toys never complete chores for you.
+- Friends opens a playdate: invite up to two hatchling visitors or earlier companions from the family album. They appear beside your pet on the LCD and in camera view. Pass a ball between them three times to finish a play step, or make the group dance. Visitors do not replace the active pet or need their own care; no account or online connection to another player is involved.
+- Snack snake is the third game. Collect apples with a growing pixel snake while your companion cheers. Steer with touch arrows, swipes or keyboard arrows/WASD. The edges wrap around; bumping your own tail offers a retry. Six levels gradually increase the apple goal and speed, with a slower pace option, pause/resume and automatic pause when the page is hidden. Winning advances its own saved level and earns the adventure play step.
 - Each family has a five-chapter adventure. One care activity or completed game/toy round earns the first keepsake choice; subsequent chapters need both care and play, in either order. A new discovered form opens each chapter. Choose one of two pixel decorations per chapter and display any earned item on the LCD. Unfinished progress persists without daily resets, streaks or penalties. Three ball tosses or six bubbles finish a toy round; free play can continue afterward.
-- Camera view places the LCD creature over a live camera picture. Drag him around, resize him, and tap to interact. This is a 2D camera overlay, without surface tracking. Camera access starts only after tapping Start camera; no microphone, recording, photo storage, or upload is used. Closing the view or leaving the page stops the camera. Hardware camera availability and permission are required.
+- Camera view places the LCD creatures over a live camera picture. Drag them around, resize them, and tap to interact. This is a 2D camera overlay, without surface tracking. Take photo captures the visible frame and creatures into a local PNG preview, then stops the camera. Share / save photo opens the device's share sheet when file sharing is supported; on iPad, use its Save Image option when offered. PNG download and pressing and holding the preview provide alternatives. Browsers cannot silently write to the camera roll. Retake discards the preview. No microphone, video recording or automatic upload is used; sharing happens only through a destination the player chooses. Closing the view or leaving the page stops the camera. Hardware camera availability and permission are required.
 - A centred handheld device, right-side chores drawer, optional sound, reduced motion, and layouts for modern iPads and phones.
 - Reset in the bottom menu asks for confirmation before clearing this browser’s companion and returning to egg selection.
 - Family album offers an optional next generation after seven local calendar days and two completed cocoons. Continue the same egg family or choose any other family without resetting. The previous companion's full forms, check-ins, care history and keepsakes stay archived. Game levels, care mastery and custom chores carry forward; the new egg has a fresh adventure, fresh daily care and a small inherited pixel feature. Companions never die, and starting a new generation is never automatic.
@@ -70,14 +72,17 @@ GitHub Pages publishes the root of the gh-pages branch. The Vite base path is /r
 - app/remybot.tsx: interface and interactions
 - app/storage.ts: validated, versioned browser saves
 - app/engine.ts: lifecycle, food, mood, and check-in rules
-- app/play-game.tsx: the two creature games
+- app/play-game.tsx: game selection, stars and memory games
+- app/snake-game.tsx and app/snake-rules.ts: LCD Snake interface and movement rules
 - app/game-rules.ts: difficulty levels and random game layouts
 - app/toy-box.tsx: ball and bubble interactions
+- app/playdate.tsx and app/playmates.ts: visitor selection, shared ball play and LCD friends
 - app/care-hub.tsx: daily care dashboard, blanket and bedtime controls
 - app/care-activity.tsx and app/care-rules.ts: gesture activities and rhythm feeding
 - app/family-album.tsx and app/creature-appearance.tsx: generations and inherited LCD features
 - app/draggable-creature.tsx: bounded touch, mouse, and keyboard movement
 - app/camera-view.tsx: optional camera overlay and placement controls
+- app/camera-photo.ts: local photo composition and preview helpers
 - app/evolution-path.tsx: five-form discovery tracker with hidden future artwork
 - app/adventure.tsx and app/adventure-content.ts: next action, family story chapters and collectible LCD decorations
 - app/eggs.ts and app/lore.json: origins and unlocked stories

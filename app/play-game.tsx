@@ -4,13 +4,15 @@ import {useEffect, useRef, useState, type CSSProperties} from 'react';
 import {ArrowLeft, ArrowUp, Hand, RotateCw} from 'lucide-react';
 import {checkMove, createMovePattern, createStarPlaces, gameLevel, MAX_LEVELS, moveRules, starRules, type Game, type Move} from './game-rules';
 import {CreatureAppearance} from './creature-appearance';
+import {SnakeGame} from './snake-game';
+import {snakeRules} from './snake-rules';
 import './play-game.css';
 
 export type PlayGameProps = {
   name: string;
   spriteSrc: string;
   appearance?: {egg: number; stage: number; variant: number};
-  gameWins?: {stars: number; moves: number};
+  gameWins?: {stars: number; moves: number; snake?: number};
   onComplete: (game: Game) => Promise<boolean>;
   onReact: () => void;
 };
@@ -60,7 +62,7 @@ export function PlayGame({name, spriteSrc, appearance, gameWins = {stars: 0, mov
   reactRef.current = onReact;
 
   const game = session?.game;
-  const complete = !!session && (game === 'stars' ? caught === session.stars.goal : round === session.patterns.length - 1 && phase === 'roundDone');
+  const complete = !!session && (game === 'stars' ? caught === session.stars.goal : game === 'moves' && round === session.patterns.length - 1 && phase === 'roundDone');
 
   function updatePhase(next: Phase) {
     phaseRef.current = next;
@@ -195,9 +197,12 @@ export function PlayGame({name, spriteSrc, appearance, gameWins = {stars: 0, mov
     <div className="play-choices">
       <button ref={firstChoice} className="play-choice" onClick={() => startGame('stars')}><PixelStar/><span><strong>Catch the stars <em>Level {gameLevel('stars', gameWins.stars)}</em></strong><small>Find {starRules(gameWins.stars).goal} stars for {name}.{starRules(gameWins.stars).drift ? ' Now they drift!' : ' Take your time.'}</small></span><span aria-hidden="true">→</span></button>
       <button className="play-choice" onClick={() => startGame('moves')}><Hand/><span><strong>Copy my moves <em>Level {gameLevel('moves', gameWins.moves)}</em></strong><small>Hop, spin and wave. Patterns of up to {Math.max(...moveRules(gameWins.moves).lengths)} moves.</small></span><span aria-hidden="true">→</span></button>
+      <button className="play-choice" onClick={() => startGame('snake')}><svg viewBox="0 0 24 24" aria-hidden="true" shapeRendering="crispEdges"><path d="M3 19V13H13V7H21V13H17V21H3Z" fill="currentColor"/><path d="M17 8H19V10H17Z" fill="#eff2e5"/><path d="M4 3H7V6H4ZM7 1H9V3H7Z" fill="currentColor"/></svg><span><strong>Snack snake <em>Level {gameLevel('snake', gameWins.snake)}</em></strong><small>Steer a growing snake to {snakeRules(gameWins.snake).goal} apples. {name} cheers you on.</small></span><span aria-hidden="true">→</span></button>
     </div>
-    <p className="play-chooser-note">Finish a game to unlock its next level. New stars and moves every time.</p>
+    <p className="play-chooser-note">Finish a game to unlock its next level. Each game has its own progress.</p>
   </div>;
+
+  if (session.game === 'snake') return <SnakeGame name={name} spriteSrc={spriteSrc} appearance={appearance} wins={gameWins.snake ?? 0} onComplete={() => onComplete('snake')} onReact={onReact} onBack={() => startGame(null)}/>;
 
   const level = game === 'stars' ? session.stars.level : session.moves.level;
   const maxLevel = MAX_LEVELS[session.game];

@@ -26,3 +26,16 @@
 @keyframes camera-giggle{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(7deg) translateY(-7px)}}
 @media(max-width:440px){.camera-view__adjustments{gap:8px}.camera-view__adjustments label{gap:7px;font-size:12px}.camera-view__adjustments button span{display:none}.camera-view__hint{font-size:12px}.camera-view__stage{height:clamp(230px,36dvh,330px)}}
 @media(prefers-reduced-motion:reduce){.camera-view__pet--laughing .camera-view__appearance{animation:none}}
+.camera-view__actions{display:flex;flex-wrap:wrap;gap:9px}
+.camera-view__actions .primary-button,.camera-view__actions .secondary-button{flex:1;min-width:140px}
+.camera-view__friend-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.camera-view__friend-tabs button{flex:1;min-width:65px;min-height:44px;padding:7px 10px;border:1px solid #c5cebb;border-radius:8px;background:#f0f2e6;color:#34442a;font-size:13px;overflow-wrap:anywhere}
+.camera-view__friend-tabs button[aria-pressed=true]{background:#dce7be;border-color:#6f8356;box-shadow:inset 0 -2px 0 #809362}
+.camera-view__adjustments label span{max-width:140px;white-space:normal;overflow-wrap:anywhere}
+.camera-view__photo-preview{position:relative;border:2px solid #5a6c42;border-radius:12px;overflow:hidden;background:#293d32;line-height:0}
+.camera-view__photo-preview img{display:block;width:100%;height:auto;max-height:48dvh;object-fit:contain;user-select:auto;-webkit-user-select:auto;-webkit-touch-callout:default}
+.camera-view__photo-label{position:absolute;top:10px;left:10px;pointer-events:none;background:#f8f7e4eb;border-radius:5px;padding:7px;color:#34442a;font:10px var(--mono);letter-spacing:.4px;line-height:1}
+.camera-view__photo-actions{display:flex;flex-wrap:wrap;gap:9px}
+.camera-view__photo-actions .primary-button,.camera-view__photo-actions .secondary-button{display:flex;align-items:center;justify-content:center;gap:8px;flex:1;min-width:120px;min-height:48px;margin:0;padding:11px 14px;text-align:center;font-size:14px}
+.camera-view__photo-actions .primary-button{flex-basis:100%}
+.camera-view__save-hint{font-size:12px;line-height:1.6;color:#506243}

@@ -1,9 +1,9 @@
-export type Game = 'stars' | 'moves';
+export type Game = 'stars' | 'moves' | 'snake';
 export type Move = 'hop' | 'spin' | 'wave';
 export type StarPlace = {x: number; y: number};
 type Random = () => number;
 
-export const MAX_LEVELS: Record<Game, number> = {stars: 8, moves: 6};
+export const MAX_LEVELS: Record<Game, number> = {stars: 8, moves: 6, snake: 6};
 
 export function gameLevel(game: Game, wins = 0): number {
   const completed = Number.isFinite(wins) ? Math.max(0, Math.floor(wins)) : 0;

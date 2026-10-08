@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {transition, dateKey, variantForGeneration, discoveredFormCount, FAMILY_COUNT, FORM_COUNT, KEEPSAKE_CHOICES, type Action, type Pet, type CompanionSnapshot} from './engine.ts';
+import {transition, availablePlaymateIds, dateKey, variantForGeneration, discoveredFormCount, FAMILY_COUNT, FORM_COUNT, KEEPSAKE_CHOICES, type Action, type Pet, type CompanionSnapshot} from './engine.ts';
 
 export const SAVE_KEY = 'remybot.pet.v1';
 export const SAVE_LOCK = 'remybot.pet.write';
@@ -39,7 +39,8 @@ const companionSchema = z.object({
   food:z.object({level:z.number().int().min(0).max(3), decayAt:timestamp}).strict(),
   pettedDate:calendarDate.nullable(), fedDates:z.array(calendarDate),
   playCount:z.number().int().nonnegative().safe().optional(), lastPlayedAt:timestamp.optional(),
-  gameWins:z.object({stars:z.number().int().nonnegative().safe(),moves:z.number().int().nonnegative().safe()}).strict().optional(),
+  gameWins:z.object({stars:z.number().int().nonnegative().safe(),moves:z.number().int().nonnegative().safe(),snake:z.number().int().nonnegative().safe().optional()}).strict().optional(),
+  playmates:z.array(z.string().max(30).regex(/^(guest-[0-7]|ancestor-[1-9]\d*)$/)).max(2).refine(ids=>new Set(ids).size===ids.length).optional(),
   care:z.object({xp:z.number().int().nonnegative().safe(),completed:z.object({brush:calendarDate.optional(),wash:calendarDate.optional(),pat:calendarDate.optional()}).strict(),lastCompletedAt:timestamp}).strict().optional(),
   adventure:z.object({chapter:z.number().int().min(0).max(KEEPSAKE_CHOICES.length),care:z.boolean(),play:z.boolean(),items:z.array(z.string()).max(KEEPSAKE_CHOICES.length),equipped:z.string().nullable()}).strict().optional(),
   revealedStage:stage, highestStage:stage,
@@ -58,16 +59,16 @@ function validAdventure(pet:CompanionSnapshot){
   (adventure.chapter<discoveries||(!adventure.care&&!adventure.play));
 }
 function validCompanion(pet:CompanionSnapshot){return pet.highestStage>=pet.revealedStage && pet.forms[0]?.stage===0 && (pet.forms[0].visualForm===undefined||pet.forms[0].visualForm===1) &&
-  (!pet.gameWins || pet.gameWins.stars+pet.gameWins.moves<=(pet.playCount??0)) &&
+  (!pet.gameWins || pet.gameWins.stars+pet.gameWins.moves+(pet.gameWins.snake??0)<=(pet.playCount??0)) &&
   (!pet.care || (pet.care.xp>=Object.keys(pet.care.completed).length && Object.values(pet.care.completed).every(day=>typeof day==='string'&&day>=pet.bornDate&&day<=lastCareDate(pet)))) &&
-  validAdventure(pet) &&
+  validAdventure(pet) && !pet.playmates?.includes(`guest-${pet.egg}`) &&
   (!pet.restMode || !!pet.restUntil) &&
   (pet.restMode!=='bedtime' || (!!pet.lastBedtimeAt && Date.parse(pet.restUntil!)-Date.parse(pet.lastBedtimeAt)===8*3600000)) &&
   pet.forms.at(-1)?.stage===pet.revealedStage && pet.forms.every((form,index)=>index===0||form.stage>pet.forms[index-1].stage) &&
   (!pet.cocoon || (pet.cocoon.targetStage>pet.revealedStage && pet.cocoon.targetStage<=pet.highestStage &&
     Date.parse(pet.cocoon.endsAt)-Date.parse(pet.cocoon.startedAt)===60000));}
-const ancestorSchema=z.object({generation:z.number().int().positive().safe(),variant:z.number().int().min(0).max(3),archivedAt:timestamp,pet:companionSchema.refine(validCompanion)}).strict();
-const petSchema=companionSchema.extend({lineage:z.object({generation:z.number().int().min(2).safe(),variant:z.number().int().min(1).max(3),ancestors:z.array(ancestorSchema).min(1)}).strict().optional()}).strict().refine(validCompanion).refine(pet=>!pet.lineage || (
+const ancestorSchema=z.object({generation:z.number().int().positive().safe(),variant:z.number().int().min(0).max(3),archivedAt:timestamp,pet:companionSchema.refine(validCompanion)}).strict().refine(ancestor=>!ancestor.pet.playmates||ancestor.pet.playmates.every(id=>!id.startsWith('ancestor-')||Number(id.slice(9))<ancestor.generation));
+const petSchema=companionSchema.extend({lineage:z.object({generation:z.number().int().min(2).safe(),variant:z.number().int().min(1).max(3),ancestors:z.array(ancestorSchema).min(1)}).strict().optional()}).strict().refine(validCompanion).refine(pet=>!pet.playmates||pet.playmates.every(id=>availablePlaymateIds(pet).includes(id))).refine(pet=>!pet.lineage || (
   pet.lineage.ancestors.length===pet.lineage.generation-1 && pet.lineage.variant===variantForGeneration(pet.lineage.generation) &&
   pet.lineage.ancestors.every((ancestor,index)=>ancestor.generation===index+1 && ancestor.variant===variantForGeneration(ancestor.generation) &&
     Date.parse(ancestor.archivedAt)>=Date.parse(ancestor.pet.bornAt) &&
