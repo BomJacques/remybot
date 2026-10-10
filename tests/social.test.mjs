@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {transition,defaults,availablePlaymateIds,adventureProgress,hatchSeconds} from '../app/engine.ts';
+import {FAMILY_COUNT,transition,defaults,availablePlaymateIds,adventureProgress,hatchSeconds} from '../app/engine.ts';
 import {applySavedAction,readSavedPet,SAVE_KEY} from '../app/storage.ts';
 
 const start=new Date('2026-10-08T00:00:00Z');
@@ -12,7 +12,7 @@ function evolve(p,days){const time=later(days);return transition(transition(p,{t
 
 test('two visitors can join after hatching without replacing or caring for the active pet',()=>{
   const before=adopt();
-  assert.equal(availablePlaymateIds(before).length,7);
+  assert.equal(availablePlaymateIds(before).length,FAMILY_COUNT-1);
   assert.ok(!availablePlaymateIds(before).includes('guest-0'));
   assert.throws(()=>transition(before,{type:'invite',ids:['guest-1']},start),/hatch/);
   const after=transition(before,{type:'invite',ids:['guest-1','guest-7']},later(0));
@@ -24,7 +24,7 @@ test('two visitors can join after hatching without replacing or caring for the a
 
 test('visitor invitations reject duplicates, unknown IDs, the current hatchling and too many guests',()=>{
   const pet=adopt();
-  for(const ids of [['guest-1','guest-1'],['guest-0'],['guest-8'],['ancestor-1'],['guest-1','guest-2','guest-3'],['guest-01'],[{}],null])assert.throws(()=>transition(pet,{type:'invite',ids},later(0)),/two different friends/);
+  for(const ids of [['guest-1','guest-1'],['guest-0'],[`guest-${FAMILY_COUNT}`],['ancestor-1'],['guest-1','guest-2','guest-3'],['guest-01'],[{}],null])assert.throws(()=>transition(pet,{type:'invite',ids},later(0)),/two different friends/);
 });
 
 test('completed snake games have an independent saved level and earn the adventure play step',()=>{
@@ -73,7 +73,7 @@ test('new generations can invite their actual ancestors and keep archived visits
 test('invalid visitor references and impossible snake totals never overwrite saves',()=>{
   const good=memory();applySavedAction(good,adoption,start);
   for(const mutate of [
-    p=>{p.playmates=['ancestor-1'];},p=>{p.playmates=['guest-0'];},p=>{p.playmates=['guest-9'];},
+    p=>{p.playmates=['ancestor-1'];},p=>{p.playmates=['guest-0'];},p=>{p.playmates=[`guest-${FAMILY_COUNT}`];},
     p=>{p.playmates=['guest-1','guest-1'];},p=>{p.playmates=['guest-1','guest-2','guest-3'];},
     p=>{p.gameWins={stars:0,moves:0,snake:-1};},p=>{p.gameWins={stars:0,moves:0,snake:1};p.playCount=0;},
   ]){

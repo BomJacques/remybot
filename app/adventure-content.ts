@@ -31,7 +31,7 @@ export const keepsakes: Keepsake[] = [
   {id: 'beacon', name: 'Little beacon', chapter: 4, shape: 'beacon'},
 ];
 
-// Egg order: Moss, Luna, Ember, Tide, Static, Relic, Nimbus, Pebble.
+// Egg order: Moss, Luna, Ember, Tide, Static, Relic, Nimbus, Pebble, Dusk, Coral, Glint, Tinker.
 // Each chapter follows one discovered form. Its keepsake is the player's choice.
 export const adventures: Adventure[] = [
   {
@@ -112,6 +112,46 @@ export const adventures: Adventure[] = [
       {title: 'A clear direction', prompt: 'The trail splits beside a tree. Pebble wants walkers to know which way the route goes.', discovery: 'Pebble draws a clear turning point. The beetle testing the route gets it right on the first try.'},
       {title: 'Over the stream', prompt: 'The last gap crosses the stream. Pebble is planning a set of pretend stepping stones.', discovery: 'Pebble checks each stepping stone in the plan. Small gaps, flat tops and no wobbly middle one.'},
       {title: 'The trail is ready', prompt: 'The route now reaches the other bank. Help Pebble finish its streamside trail.', discovery: 'Pebble follows the finished route in the story. The beetle comes too, carrying a picnic much larger than expected.'},
+    ],
+  },
+  {
+    title: 'The Attic Cinema',
+    chapters: [
+      {title: 'A very small cinema', prompt: 'Dusk wants an attic cinema for shadow stories. Start with a clear spot for the audience.', discovery: 'Dusk sweeps a corner and lines up the seats. One is a thimble, reserved for a particularly small moth.'},
+      {title: 'The opening scene', prompt: 'The first film takes place in the night sky. Dusk is making a picture for the opening scene.', discovery: 'Dusk holds the picture up to the screen. A huge shadow crosses it. That is the popcorn bowl.'},
+      {title: 'Find your seat', prompt: 'The attic has too many boxes. Dusk needs a marker to lead guests to the cinema.', discovery: 'Dusk marks the route between the boxes. The moth still checks inside a sock, just in case.'},
+      {title: 'An underwater scene', prompt: 'The story dives beneath the sea. Dusk needs a watery corner for the next scene.', discovery: 'Dusk practises making wave sounds behind the screen. The first attempt sounds exactly like a sneeze.'},
+      {title: 'The first screening', prompt: 'Seats, scenes and sound effects are ready. Dusk is setting the lights for opening night.', discovery: 'The shadow story begins. The moth claps at the end, then asks whether the enormous popcorn monster gets another film.'},
+    ],
+  },
+  {
+    title: 'The Rockpool Cafe',
+    chapters: [
+      {title: 'A table by the water', prompt: 'Coral is opening an imaginary rockpool cafe. The first table needs a little decoration.', discovery: 'Coral sets the table. A crab tests the seat, shuffles sideways and requests a sideways menu.'},
+      {title: 'The evening menu', prompt: 'The cafe will serve pretend moonlight soup after sunset. Coral is drawing its menu.', discovery: 'Coral finishes the evening menu. Moonlight soup comes with a spoon and a warning: do not spill the reflection.'},
+      {title: 'Open for visitors', prompt: 'Customers need to spot the cafe among the rocks. Coral is planning a sign by the entrance.', discovery: 'Coral marks the entrance. The crab arrives first, followed by a snail who ordered yesterday.'},
+      {title: 'The splash station', prompt: 'The cafe needs a place to rinse its pretend dishes. Coral is setting up a water corner.', discovery: 'Coral stacks the clean dishes by size. The crab checks them for crumbs and calls it a very important job.'},
+      {title: 'Supper service', prompt: 'The tables and menu are ready. Coral is getting the rockpool cafe ready for evening guests.', discovery: 'Coral serves the first pretend supper. The snail orders something quick. Everyone politely avoids looking at the clock.'},
+    ],
+  },
+  {
+    title: 'The Cave Map Club',
+    chapters: [
+      {title: 'Base camp', prompt: 'Glint is drawing an imaginary cave map. Start with a camp at the bright entrance.', discovery: 'Glint sketches the camp. The map has a sleeping spot, a snack spot and a second snack spot for emergencies.'},
+      {title: 'A roof full of dots', prompt: 'Bright specks on the cave roof look like the night sky. Glint wants to add them to the map.', discovery: 'Glint counts the specks. One moves. That is a moth, and it refuses to stay in the right place.'},
+      {title: 'The left-right problem', prompt: 'Two tunnels look alike on the map. Glint is marking the route back to camp.', discovery: 'Glint checks every turn in the drawing. Left, right, left. The snack spot is now very easy to find.'},
+      {title: 'The echo pool', prompt: 'An imaginary pool makes a brilliant echo. Glint is drawing a place to stop and listen.', discovery: 'Glint says hello to the echo pool. Hello comes back. So does the sound of an extremely loud hiccup.'},
+      {title: 'Map complete', prompt: 'The camp, tunnels and pool are marked. Glint is adding the final light to the map club.', discovery: 'Glint unfolds the finished map for the club. Everyone finds their way round, including the moth, who takes a snack detour.'},
+    ],
+  },
+  {
+    title: 'The Toy Workshop',
+    chapters: [
+      {title: 'A bench of our own', prompt: 'Tinker is setting up a pretend toy workshop. First, the workbench needs a little decoration.', discovery: 'Tinker clears the bench and sorts the parts. Buttons in one tray, wheels in another, biscuit in mouth.'},
+      {title: 'The bedtime mobile', prompt: 'The workshop\'s first project is a hanging sky for a toy bed. Tinker is planning its shapes.', discovery: 'Tinker tests the paper mobile. It spins neatly until a toy duck insists on having a turn underneath.'},
+      {title: 'The wind test', prompt: 'A new toy needs a way to catch the breeze. Tinker is setting up a windy test corner.', discovery: 'Tinker starts the wind test with a cardboard fan. The toy moves three steps. The plans move all the way off the bench.'},
+      {title: 'Float or splash?', prompt: 'Tinker wants to test a pretend toy boat. The workshop needs a little water station.', discovery: 'The first toy boat floats. The second goes plop. Tinker writes down a useful result: less potato next time.'},
+      {title: 'Workshop open day', prompt: 'The toys are ready to try. Tinker is finishing the workshop for its first open day.', discovery: 'The visitors test every toy. The duck chooses the mobile, the boat stays afloat, and Tinker finally finds the missing button.'},
     ],
   },
 ];

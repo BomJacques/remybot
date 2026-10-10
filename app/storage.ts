@@ -40,7 +40,7 @@ const companionSchema = z.object({
   pettedDate:calendarDate.nullable(), fedDates:z.array(calendarDate),
   playCount:z.number().int().nonnegative().safe().optional(), lastPlayedAt:timestamp.optional(),
   gameWins:z.object({stars:z.number().int().nonnegative().safe(),moves:z.number().int().nonnegative().safe(),snake:z.number().int().nonnegative().safe().optional()}).strict().optional(),
-  playmates:z.array(z.string().max(30).regex(/^(guest-[0-7]|ancestor-[1-9]\d*)$/)).max(2).refine(ids=>new Set(ids).size===ids.length).optional(),
+  playmates:z.array(z.string().max(30).regex(/^(guest-(?:0|[1-9]\d*)|ancestor-[1-9]\d*)$/).refine(id=>!id.startsWith('guest-')||Number(id.slice(6))<FAMILY_COUNT)).max(2).refine(ids=>new Set(ids).size===ids.length).optional(),
   care:z.object({xp:z.number().int().nonnegative().safe(),completed:z.object({brush:calendarDate.optional(),wash:calendarDate.optional(),pat:calendarDate.optional()}).strict(),lastCompletedAt:timestamp}).strict().optional(),
   adventure:z.object({chapter:z.number().int().min(0).max(KEEPSAKE_CHOICES.length),care:z.boolean(),play:z.boolean(),items:z.array(z.string()).max(KEEPSAKE_CHOICES.length),equipped:z.string().nullable()}).strict().optional(),
   revealedStage:stage, highestStage:stage,

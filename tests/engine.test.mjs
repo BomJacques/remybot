@@ -25,7 +25,7 @@ test('food decay uses real hours across DST',()=>{const p=adopt(0,d('2026-03-08T
 test('feeding at positive food preserves the partial interval',()=>{const p=adopt();const fed=transition(p,{type:'feed',food:'snack'},at(p,9*H));assert.equal(fed.food.level,3);assert.equal(foodAt(fed,at(p,16*H-1)).level,3);assert.equal(foodAt(fed,at(p,16*H)).level,2);});
 test('long absence has no negative food debt',()=>{const p=adopt();const t=at(p,100*24*H);const fed=transition(p,{type:'feed',food:'meal'},t);assert.equal(foodAt(p,t).level,0);assert.equal(fed.food.level,2);assert.equal(foodAt(fed,new Date(+t+8*H-1)).level,2);assert.equal(foodAt(fed,new Date(+t+8*H)).level,1);});
 test('full food rejects extra feeding',()=>assert.throws(()=>transition(adopt(),{type:'feed',food:'meal'},at(adopt(),0)),/is full/));
-test('all eight food preferences are internally consistent and match lore',async()=>{const lore=JSON.parse(await readFile(new URL('../app/lore.json',import.meta.url),'utf8'));assert.equal(preferences.length,FAMILY_COUNT);assert.equal(lore.length,FAMILY_COUNT);assert.equal(new Set(preferences.slice(0,6).map(p=>p.likes+'/'+p.dislikes)).size,6,'original families retain their six different pairings');for(let egg=0;egg<FAMILY_COUNT;egg++){assert.notEqual(preferences[egg].likes,preferences[egg].dislikes);assert.equal(foodValue(egg,preferences[egg].likes),2);assert.equal(foodValue(egg,preferences[egg].dislikes),1);assert.equal(lore[egg].likes,preferences[egg].likes);assert.equal(lore[egg].dislikes,preferences[egg].dislikes);}});
+test('all family food preferences are internally consistent and match lore',async()=>{const lore=JSON.parse(await readFile(new URL('../app/lore.json',import.meta.url),'utf8'));assert.equal(preferences.length,FAMILY_COUNT);assert.equal(lore.length,FAMILY_COUNT);assert.equal(new Set(preferences.slice(0,6).map(p=>p.likes+'/'+p.dislikes)).size,6,'original families retain their six different pairings');for(let egg=0;egg<FAMILY_COUNT;egg++){assert.notEqual(preferences[egg].likes,preferences[egg].dislikes);assert.equal(foodValue(egg,preferences[egg].likes),2);assert.equal(foodValue(egg,preferences[egg].dislikes),1);assert.equal(lore[egg].likes,preferences[egg].likes);assert.equal(lore[egg].dislikes,preferences[egg].dislikes);}});
 test('each egg gains the documented preferred food value',()=>{for(let egg=0;egg<FAMILY_COUNT;egg++){const p=adopt(egg);const fed=transition(p,{type:'feed',food:preferences[egg].likes},at(p,24*H));assert.equal(fed.food.level,2);}});
 test('multiple feeds in a day give one daily feeding entry',()=>{let p=adopt(0,d('2026-10-03T14:00:00Z'));p=transition(p,{type:'feed',food:'meal'},at(p,8*H));p=transition(p,{type:'feed',food:'snack'},at(p,16*H));assert.equal(p.fedDates.length,1);});
 test('repeated same-day check-ins overwrite rather than stack',()=>{let p=adopt();p=transition(p,{type:'checkin',done:['bed']},at(p,1));p=transition(p,{type:'checkin',done:['learning']},at(p,2));assert.equal(Object.keys(p.checkins).length,1);assert.equal(p.checkins[p.bornDate].items.filter(i=>i.done).length,1);assert.equal(careTrait(p),'mind');});
@@ -135,7 +135,7 @@ async function silhouette(path){
   return Uint8Array.from({length:width*height},(_,index)=>pixels[index*4+3]>=128?1:0);
 }
 
-test('all eight eggs have five visibly distinct evolution silhouettes in every expression',async()=>{
+test('all eggs have five visibly distinct evolution silhouettes in every expression',async()=>{
   for(let egg=0;egg<FAMILY_COUNT;egg++){
     for(const folder of ['sprites','moods/happy','moods/sad','moods/hungry','moods/sleeping']){
       const forms=await Promise.all(Array.from({length:FORM_COUNT},(_,index)=>silhouette(`../public/${folder}/${egg}-${index+1}.png`)));
@@ -294,7 +294,7 @@ test('stale lineage confirmations and invalid names cannot replace a companion',
 });
 
 test('Nimbus and Pebble adopt, hatch, feed and renew through all five forms',()=>{
-  assert.equal(FAMILY_COUNT,8);assert.equal(FORM_COUNT,5);
+  assert.equal(FAMILY_COUNT,12);assert.equal(FORM_COUNT,5);
   assert.deepEqual(preferences[6],{likes:'treat',dislikes:'meal'});
   assert.deepEqual(preferences[7],{likes:'meal',dislikes:'treat'});
   const sequence=[1,2,3,4,5,4,5,4];
@@ -318,7 +318,7 @@ test('Nimbus and Pebble adopt, hatch, feed and renew through all five forms',()=
     assert.equal(child.forms[0].visualForm,1);
     assert.deepEqual(child.lineage.ancestors[0].pet.forms,p.forms);
   }
-  for(const egg of [-1,8,99,0.5,NaN])assert.throws(()=>adopt(egg),/eight eggs/);
+  for(const egg of [-1,FAMILY_COUNT,99,0.5,NaN])assert.throws(()=>adopt(egg),/eggs/);
 });
 
 test('legacy renewal appearances stay fixed when Radiant and Ancient are discovered',()=>{
@@ -510,6 +510,6 @@ test('a different-family lineage archives the whole adventure and starts with fr
   assert.equal(child.lineage.ancestors[0].pet.egg,0);
   assert.deepEqual(child.gameWins,p.gameWins);assert.equal(child.care.xp,p.care.xp);
   assert.equal(transition(p,{type:'lineage',name:'Same family',expectedBornAt:p.bornAt},now).egg,0);
-  for(const egg of [-1,8,1.5,null,NaN])assert.throws(()=>transition(p,{type:'lineage',egg,name:'Invalid',expectedBornAt:p.bornAt},now),/eight eggs/);
+  for(const egg of [-1,FAMILY_COUNT,1.5,null,NaN])assert.throws(()=>transition(p,{type:'lineage',egg,name:'Invalid',expectedBornAt:p.bornAt},now),/eggs/);
   assert.deepEqual(p,before);
 });

@@ -86,5 +86,49 @@
       "Empty your lunch box and put it in its usual spot.",
       "Wash your hands after playing outside. Give Pebble a wash in Daily care, too."
     ]
+  },
+  {
+    "title": "Dusk and the Attic Ticket",
+    "story": "Squeak! I’m Dusk. My egg was hiding in the attic of an old theatre. Every evening, I heard footsteps below, then music, then lots of clapping. I thought they were applauding my excellent tapping. When I hatched, a moth showed me the stage through a crack in the floor. Someone had left a tiny ticket beside it: SEAT ONE. I tucked it under my wing and set off to find the next show. Now I’m here. Have you got any crunchy snacks? Watching a whole play is hungry work.",
+    "quirk": "Practises a dramatic bow before settling down for a nap.",
+    "likes": "snack",
+    "dislikes": "meal",
+    "careHints": [
+      "Put your shoes away so the path to our pretend theatre stays clear.",
+      "Brush your own teeth before bed. Brushing Dusk in Daily care is a separate job."
+    ]
+  },
+  {
+    "title": "Coral and the Missing Picnic",
+    "story": "Hello! I’m Coral. The rockpool crabs were having a picnic beside my egg. They laid out seaweed sandwiches, counted the plates and discovered that every spoon was missing. I could hear them arguing through the shell. After I hatched, I reached behind a rock and found the whole lot. A snail had borrowed them to build a slide. We put the spoons back, washed them, and had lunch at last. I packed a garden bowl for the trip here. Shall we set the table? I’m rather good at carrying things.",
+    "quirk": "Counts the dishes twice, then checks behind the nearest rock.",
+    "likes": "meal",
+    "dislikes": "treat",
+    "careHints": [
+      "Empty your lunch box and put it where it belongs. Coral can check the pretend picnic dishes.",
+      "Wash your hands before eating, then give Coral a wash in Daily care."
+    ]
+  },
+  {
+    "title": "Glint and the Wrong Turn",
+    "story": "Hi, I’m Glint. My egg sat beside a shiny stone in a cave. When I hatched, I followed the stone’s sparkle to a tunnel, then another tunnel, then the very same stone. Three times. A beetle suggested drawing a map. I drew the entrance, the tunnels and a very large picture of my snack. Much better. My sticky toes helped me reach a ledge where someone had left a star biscuit. I ate it, rolled up the map and found the way here. Your room has far fewer tunnels. Probably.",
+    "quirk": "Draws a map of any new place, including the snack cupboard.",
+    "likes": "treat",
+    "dislikes": "snack",
+    "careHints": [
+      "Put your shoes in their usual spot so tomorrow’s expedition can start there.",
+      "Put your books or toys away, then help Glint settle into Bedtime."
+    ]
+  },
+  {
+    "title": "Tinker and the Spare Button",
+    "story": "Click, click. I’m Tinker. My egg arrived in a toy workshop with no label and one spare button. When I hatched, the button rolled under a shelf. I followed it past a wooden train, a squeaky duck and a wind-up mouse going round in circles. The mouse had a wonky wheel. I nudged it straight and off it went, taking my button along for the ride. I made a note to ask for it back. First, I’ve come to inspect your snack supply. My crumb tray is empty.",
+    "quirk": "Makes a tiny clicking noise while deciding which job to do first.",
+    "likes": "snack",
+    "dislikes": "treat",
+    "careHints": [
+      "Empty your lunch box, then put it in its usual place. Tinker likes a clear workbench.",
+      "Brush your own teeth, then brush Tinker in Daily care. Only tick your chore when your teeth are done."
+    ]
   }
 ]

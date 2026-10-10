@@ -43,6 +43,7 @@ footer{justify-content:flex-end}.lcd-incubation{position:absolute;bottom:43px;le
 
 .reauth-link{display:block;text-decoration:underline;padding-top:8px;min-height:44px;font-weight:600}
 
-/* Eight mystery eggs stay balanced on tablet and phone. */
+/* Four columns on tablets, three on narrow phones; every egg stays tappable. */
 .egg-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-@media(max-width:399px){.egg-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.egg-choice .sprite{max-width:100%;height:auto;aspect-ratio:1}
+@media(max-width:399px){.egg-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.egg-choice{min-height:107px}}

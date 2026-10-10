@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {defaults,hatchSeconds,cocoonSeconds,growth,petSpriteStage,petStageName,adventureProgress} from '../app/engine.ts';
+import {FAMILY_COUNT,defaults,hatchSeconds,cocoonSeconds,growth,petSpriteStage,petStageName,adventureProgress} from '../app/engine.ts';
 import {SAVE_KEY,SaveError,readSavedPet,applySavedAction,resetSavedPet} from '../app/storage.ts';
 
 const start=new Date('2026-10-04T02:00:00Z');
@@ -387,7 +387,7 @@ test('invalid family indices and visual pins cannot corrupt current or archived 
   const good=memory(),parent=saveReadyFamily(good);
   applySavedAction(good,{type:'lineage',name:'Remy II',expectedBornAt:parent.bornAt},nextDay(7));
   for(const mutate of [
-    p=>{p.egg=8;},p=>{p.egg=6.5;},p=>{p.lineage.ancestors[0].pet.egg=8;},
+    p=>{p.egg=FAMILY_COUNT;},p=>{p.egg=6.5;},p=>{p.lineage.ancestors[0].pet.egg=FAMILY_COUNT;},
     ...[0,-1,6,1.5,null,'4'].map(value=>p=>{p.forms[0].visualForm=value;}),
     p=>{p.forms[0].visualForm=5;},p=>{p.lineage.ancestors[0].pet.forms[1].visualForm=6;},
   ]) {

@@ -6,7 +6,7 @@ An LCD virtual pet with simple daily chores, built for children aged 6–9. Runs
 
 ## Play
 
-Choose one of eight mystery eggs and give your companion a name. The first egg hatches in 60 seconds, with an LCD countdown and filling meter. Metamorphosis unlocks every new calendar day, with an entering animation, a 60-second cocoon, and an emergence animation. Existing saves retain their pet and can catch up to the new daily schedule.
+Choose one of twelve mystery eggs and give your companion a name. The first egg hatches in 60 seconds, with an LCD countdown and filling meter. Metamorphosis unlocks every new calendar day, with an entering animation, a 60-second cocoon, and an emergence animation. Existing saves retain their pet and can catch up to the new daily schedule.
 
 - Three default chores: Put shoes away, Brush teeth, Empty lunch box. Edit them or add up to six.
 - Incomplete chores produce a sad expression; completing them produces a happy one. Hunger and sleep take priority.
@@ -25,7 +25,7 @@ Choose one of eight mystery eggs and give your companion a name. The first egg h
 - Reset in the bottom menu asks for confirmation before clearing this browser’s companion and returning to egg selection.
 - Family album offers an optional next generation after seven local calendar days and two completed cocoons. Continue the same egg family or choose any other family without resetting. The previous companion's full forms, check-ins, care history and keepsakes stay archived. Game levels, care mastery and custom chores carry forward; the new egg has a fresh adventure, fresh daily care and a small inherited pixel feature. Companions never die, and starting a new generation is never automatic.
 
-Five creature silhouettes per egg family are followed by alternating fourth/fifth renewal forms with care marks. Moss, Luna, Ember, Tide, Static and Relic are joined by Nimbus and Pebble. The growth history shows discovered forms and keeps future forms hidden. Artwork advances with each completed cocoon, including after missed days, so consecutive emergences show different forms. Existing companions keep the artwork of all previously completed forms, then discover the added forms in order. Daily check-in prompts appear when the app is open; there are no background notifications.
+Five creature silhouettes per egg family are followed by alternating fourth/fifth renewal forms with care marks. The twelve families are Moss, Luna, Ember, Tide, Static, Relic, Nimbus, Pebble, Dusk, Coral, Glint and Tinker. Every family has its own egg, cocoon, five-stage LCD artwork, mood expressions, food preferences and five-chapter adventure. The growth history shows discovered forms and keeps future forms hidden. Artwork advances with each completed cocoon, including after missed days, so consecutive emergences show different forms. Existing companions keep the artwork of all previously completed forms, then discover the added forms in order. Daily check-in prompts appear when the app is open; there are no background notifications.
 
 ## Gameplay review
 
